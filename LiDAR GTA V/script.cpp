@@ -497,6 +497,8 @@ void ScriptMain()
 		
 		if (scanLive && lidarScanPrep)
 		{
+			log.open(lidarLogFilePath, std::ios_base::app);
+
 			double parameters[6];
 			int rangeRay;
 			int errorDist;
@@ -511,7 +513,7 @@ void ScriptMain()
 				notificationOnLeft("Input file not found. Please re-install the plugin.");
 				return;
 			}
-			//log << "Reading input file...\n";
+			log << "Reading input file...\n";
 			inputFile >> ignore >> ignore >> ignore >> ignore >> ignore;
 			for (int i = 0; i < 6; i++) {
 				inputFile >> ignore >> ignore >> parameters[i];
@@ -537,6 +539,8 @@ void ScriptMain()
 				int percentageComplete = ((float)snapshotsCounter) / ((float)positionsFileNumberOfLines) * 100;
 				notificationOnLeft("Snapshots taken: " + std::to_string(snapshotsCounter) + "\n\nCompleted: " + std::to_string(percentageComplete) + "%");
 			}
+
+			log.close();
 		}
 
 		WAIT(0);
@@ -714,6 +718,122 @@ ray angleOffsetRaycast(double angleOffsetX, double angleOffsetZ, int range)
 	return result;
 }
 
+ray angleOffsetRaycast(double angleOffsetX, double angleOffsetZ, int range, Vector3 surfaceNormal, std::ofstream& log)
+{
+	log << "New angleOffsetRaycast function \n";
+
+	log << std::string("surfaceNormal: (") + std::to_string(surfaceNormal.x) + ", " + std::to_string(surfaceNormal.y) + ", " + std::to_string(surfaceNormal.z) + ") \n";
+
+	Vector3 rot = CAM::GET_GAMEPLAY_CAM_ROT(2);
+	double rotationX = (/*rot.x + */ angleOffsetX) * (M_PI / 180.0);
+	double rotationZ = (/*rot.z + */ angleOffsetZ) * (M_PI / 180.0);
+	double multiplyXY = abs(cos(rotationX));
+	Vector3 direction;
+	direction.x = sin(rotationZ) * multiplyXY * -1;
+	direction.y = cos(rotationZ) * multiplyXY;
+	direction.z = sin(rotationX);
+
+	log << std::string("Lidar ray direction BEFORE: (") + std::to_string(direction.x) + ", " + std::to_string(direction.y) + ", " + std::to_string(direction.z) + ") \n";
+
+	Vector3 raycastCenterPos;
+	raycastCenterPos.x = playerPos.x;
+	raycastCenterPos.y = playerPos.y;
+	raycastCenterPos.z = playerPos.z + raycastHeightParam;
+
+
+	// dot product between (0, 0, 1) and the surface normal
+	//float dot = DotProduct3D(up, surfaceNormal);
+	//float groundAngle = std::acos(dot);
+
+
+	// a point vector of the point cloud projected onto the ground plane
+	Vector3 forwardPointVecProjectedOntoInclinedGround = VectorProjectionOntoPlane(normalize(direction), normalize(surfaceNormal));
+
+	log << std::string("forwardPointVecProjectedOntoInclinedGround (") + std::to_string(forwardPointVecProjectedOntoInclinedGround.x) + ", " + std::to_string(forwardPointVecProjectedOntoInclinedGround.y) + ", " + std::to_string(forwardPointVecProjectedOntoInclinedGround.z) + ") \n";
+
+	// projecao do point vector no plano xOy 
+	Vector3 up;
+	up.x = 0;
+	up.y = 0;
+	up.z = 1;
+	Vector3 forwardPointVecProjectedOntoXYplane = VectorProjectionOntoPlane(normalize(forwardPointVecProjectedOntoInclinedGround), up);
+
+	log << std::string("forwardPointVecProjectedOntoXYplane (") + std::to_string(forwardPointVecProjectedOntoXYplane.x) + ", " + std::to_string(forwardPointVecProjectedOntoXYplane.y) + ", " + std::to_string(forwardPointVecProjectedOntoXYplane.z) + ") \n";
+
+	// determine the angle between the point vector and the projected vector
+	float dot = DotProduct3D(normalize(forwardPointVecProjectedOntoInclinedGround), normalize(forwardPointVecProjectedOntoXYplane));
+
+	log << "dot: " + std::to_string(dot) + "\n";
+
+	float angleBetweenPointVecAndGround_InRadians = std::acos(dot);
+
+	log << "angleBetweenPointVecAndGround_InRadians: " + std::to_string(angleBetweenPointVecAndGround_InRadians) + "\n";
+
+	float degrees = angleBetweenPointVecAndGround_InRadians * (180 / M_PI);
+
+	log << "Angle offset X: " + std::to_string(angleOffsetX) + "\n";
+	log << "Angle offset Z: " + std::to_string(angleOffsetZ) + "\n";
+
+	log << "Ground plane angle: " + std::to_string(degrees) + "\n";
+
+	log << "Final angle: " + std::to_string(angleOffsetX + degrees) + "\n";
+
+	// convert angleOffset X and Z from degrees to radians
+	double rotationX2;
+
+	if (angleOffsetZ >= 0 && angleOffsetZ <= 90 || angleOffsetZ >= 90 && angleOffsetZ <= 180)
+		rotationX2 = (angleOffsetX + degrees) * (M_PI / 180.0);
+	else if (angleOffsetZ >= 180 && angleOffsetZ <= 270 || angleOffsetZ >= 270 && angleOffsetZ <= 360)
+		rotationX2 = (angleOffsetX - degrees) * (M_PI / 180.0);
+	else
+	{
+		return  raycast(raycastCenterPos, direction, range, -1);
+	}
+
+	// angleOffsetZ >= 270 && angleOffsetZ <= 360
+
+	//if (angleOffsetZ >= 180 && angleOffsetZ <= 270)
+		//rotationX2 = (angleOffsetX - degrees) * (M_PI / 180.0);
+	
+
+	//rotationX2 = (angleOffsetX + degrees) * (M_PI / 180.0);
+
+	/*if (angleOffsetZ >= 135 && angleOffsetZ <= 315) // valores obtidos por tentativa e erro
+	{
+		if (angleOffsetZ >= 135 && angleOffsetZ <= 180)
+			rotationX2 = (angleOffsetX + degrees) * (M_PI / 180.0);
+		else if (angleOffsetZ >= 180 && angleOffsetZ <= 270)
+			rotationX2 = (angleOffsetX - degrees) * (M_PI / 180.0);
+		else if (angleOffsetZ >= 270 && angleOffsetZ <= 315)
+			rotationX2 = (angleOffsetX + degrees) * (M_PI / 180.0);
+		else
+			rotationX2 = (angleOffsetX - degrees) * (M_PI / 180.0);
+	}
+	else
+	{
+		if (angleOffsetZ >= 0 && angleOffsetZ <= 135)
+			rotationX2 = (angleOffsetX - degrees) * (M_PI / 180.0);
+		else if (angleOffsetZ >= 45 && angleOffsetZ <= 135)
+			rotationX2 = (angleOffsetX - degrees) * (M_PI / 180.0);
+		else
+			rotationX2 = (angleOffsetX + degrees) * (M_PI / 180.0);
+	}*/
+
+
+	double rotationZ2 = (angleOffsetZ) * (M_PI / 180.0);
+	double multiplyXY2 = abs(cos(rotationX2));
+	Vector3 direction2;
+	direction2.x = sin(rotationZ2) * multiplyXY2 * -1;
+	direction2.y = cos(rotationZ2) * multiplyXY2;
+	direction2.z = sin(rotationX2);
+
+
+	log << std::string("Lidar ray direction AFTER: (") + std::to_string(direction2.x) + ", " + std::to_string(direction2.y) + ", " + std::to_string(direction2.z) + ") \n";
+	log << "------------------------- \n\n";
+
+	return  raycast(raycastCenterPos, direction2, range, -1);
+}
+
 int GetEncoderClsid(WCHAR* format, CLSID* pClsid)
 {
 	unsigned int num = 0, size = 0;
@@ -870,7 +990,85 @@ void SetupGameForLidarScan(double horiFovMin, double horiFovMax, double vertFovM
 	lidarScanPrep = true;
 }
 
+Vector3 GetSurfaceNormalVector()
+{
+	Vector3 origin_playerPos = ENTITY::GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(PLAYER::PLAYER_PED_ID(), 0, 0, 0);
+	Vector3 rayDirection;
+	rayDirection.x = 0;
+	rayDirection.y = 0;
+	rayDirection.z = -1;
 
+	ray resultCheckGround = raycast(origin_playerPos, rayDirection, 2.5, -1);
+
+	//bool groundPlaneFound = false;
+	Vector3 surfaceNormal;
+	surfaceNormal.x = 0;
+	surfaceNormal.y = 0;
+	surfaceNormal.z = 0;
+
+	//log << "--- Raycast Collided with ground: " + std::to_string(resultCheckGround.hit);
+
+	if (resultCheckGround.hit)
+	{
+		//log << "Collision with ground check raycast: " + resultCheckGround.entityTypeName;
+
+		if (resultCheckGround.entityTypeName == "RoadsBuildings") // raycast collided with ground
+		{
+			surfaceNormal = resultCheckGround.surfaceNormal;
+			//log << std::string("Surface normal: (") + std::to_string(surfaceNormal.x) + ", " + std::to_string(surfaceNormal.y) + ", " + std::to_string(surfaceNormal.z) + ") \n";
+			//groundPlaneFound = true;
+		}
+	}
+
+	return surfaceNormal;
+}
+
+Vector3 normalize(Vector3 v)
+{
+	float magnitude = std::sqrt(v.x * v.x + v.y * v.y + v.z * v.z);
+
+	if (magnitude != 0)
+	{
+		v.x = v.x / magnitude;
+		v.y = v.y / magnitude;
+		v.z = v.z / magnitude;
+	}
+
+	return v;
+}
+
+Vector3 VectorProjectionOntoPlane(Vector3 vector, Vector3 planeNormalVector)
+{
+	Vector3 vectorProjOntoNormal = MultScalarWithVector(DotProduct3D(vector, planeNormalVector) / VectorMagnitude3D(planeNormalVector), planeNormalVector);
+
+	// vector projection onto plane
+	Vector3 projOntoPlane;
+	projOntoPlane.x = vector.x - vectorProjOntoNormal.x;
+	projOntoPlane.y = vector.y - vectorProjOntoNormal.y;
+	projOntoPlane.z = vector.z - vectorProjOntoNormal.z;
+
+	return projOntoPlane;
+}
+
+float VectorMagnitude3D(Vector3 u)
+{
+	return sqrt((u.x*u.x) + (u.y*u.y) + (u.z*u.z));
+}
+
+float DotProduct3D(Vector3 u, Vector3 v)
+{
+	return (u.x*v.x + u.y*v.y + u.z*v.z) / (VectorMagnitude3D(u)*VectorMagnitude3D(v));
+}
+
+Vector3 MultScalarWithVector(float s, Vector3 v)
+{
+	Vector3 result;
+	result.x = s * v.x;
+	result.y = s * v.y;
+	result.z = s * v.z;
+
+	return result;
+}
 
 void lidar(double horiFovMin, double horiFovMax, double vertFovMin, double vertFovMax, double horiStep, double vertStep, int range, std::string filePath, double error, int errorDist, std::ofstream& log)
 {
@@ -897,9 +1095,22 @@ void lidar(double horiFovMin, double horiFovMax, double vertFovMin, double vertF
 
 			int indexColumnCounter = 0;
 
+			Vector3 surfaceNormal = GetSurfaceNormalVector();
+
 			for (double z = horiFovMin; z <= horiFovMax; z += horiStep)	 // 0 to 360, in steps of 0.5 => 360/0.5 = 720 horizontal/circle points
 			{
-				ray result = angleOffsetRaycast(x, z, range);
+				ray result;
+
+				if (surfaceNormal.x == 0 && surfaceNormal.y == 0 && surfaceNormal.z == 0)
+				{
+					log << "No surface normal\n";
+					result = angleOffsetRaycast(x, z, range);
+				}
+				else
+				{
+					log << "With Surface normal: (" + std::to_string(surfaceNormal.x) + ", " + std::to_string(surfaceNormal.y) + ", " + std::to_string(surfaceNormal.z) + "\n";
+					result = angleOffsetRaycast(x, z, range, surfaceNormal, log);
+				}
 
 				// if the ray collided with something, register the distance between the collition point and the ray origin
 				if (!(result.hitCoordinates.x == 0. && result.hitCoordinates.y == 0. && result.hitCoordinates.z == 0.))

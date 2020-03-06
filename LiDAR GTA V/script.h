@@ -50,6 +50,8 @@ struct ProjectedPointData {
 // lidar scanning start functioon
 void lidar(	double horiFovMin, double horiFovMax, double vertFovMin, double vertFovMax, double horiStep, double vertStep, int range, std::string filePath, double error, int errorDist,	std::ofstream& log);
 
+ray angleOffsetRaycast(double angleOffsetX, double angleOffsetZ, int range);
+
 ray angleOffsetRaycast(double angleOffsetX, double angleOffsetZ, int range, Vector3 surfaceNormal, std::ofstream& log);
 
 ray raycast(Vector3 source, Vector3 direction, float maxDistance, int intersectFlags);
@@ -90,5 +92,5 @@ void PostLidarScanProcessing(std::string filePath);
 
 // entry point to the mod
 void ScriptMain();
-void hhheee();
+
 #endif
