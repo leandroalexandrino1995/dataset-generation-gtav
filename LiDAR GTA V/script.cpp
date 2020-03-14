@@ -778,47 +778,17 @@ ray angleOffsetRaycast(double angleOffsetX, double angleOffsetZ, int range, Vect
 
 	log << "Final angle: " + std::to_string(angleOffsetX + degrees) + "\n";
 
+	Vector3 playerCurrentRot = ENTITY::GET_ENTITY_ROTATION(PLAYER::PLAYER_PED_ID(), 0);
+
 	// convert angleOffset X and Z from degrees to radians
 	double rotationX2;
-
-	if (angleOffsetZ >= 0 && angleOffsetZ <= 90 || angleOffsetZ >= 90 && angleOffsetZ <= 180)
+	
+	if ((angleOffsetZ >= 0 && angleOffsetZ <= 90) || (angleOffsetZ >= 90 && angleOffsetZ <= 180))
 		rotationX2 = (angleOffsetX + degrees) * (M_PI / 180.0);
-	else if (angleOffsetZ >= 180 && angleOffsetZ <= 270 || angleOffsetZ >= 270 && angleOffsetZ <= 360)
+	else if ((angleOffsetZ >= 180 && angleOffsetZ <= 270) || (angleOffsetZ >= 270 && angleOffsetZ <= 360))
 		rotationX2 = (angleOffsetX - degrees) * (M_PI / 180.0);
 	else
-	{
-		return  raycast(raycastCenterPos, direction, range, -1);
-	}
-
-	// angleOffsetZ >= 270 && angleOffsetZ <= 360
-
-	//if (angleOffsetZ >= 180 && angleOffsetZ <= 270)
-		//rotationX2 = (angleOffsetX - degrees) * (M_PI / 180.0);
-	
-
-	//rotationX2 = (angleOffsetX + degrees) * (M_PI / 180.0);
-
-	/*if (angleOffsetZ >= 135 && angleOffsetZ <= 315) // valores obtidos por tentativa e erro
-	{
-		if (angleOffsetZ >= 135 && angleOffsetZ <= 180)
-			rotationX2 = (angleOffsetX + degrees) * (M_PI / 180.0);
-		else if (angleOffsetZ >= 180 && angleOffsetZ <= 270)
-			rotationX2 = (angleOffsetX - degrees) * (M_PI / 180.0);
-		else if (angleOffsetZ >= 270 && angleOffsetZ <= 315)
-			rotationX2 = (angleOffsetX + degrees) * (M_PI / 180.0);
-		else
-			rotationX2 = (angleOffsetX - degrees) * (M_PI / 180.0);
-	}
-	else
-	{
-		if (angleOffsetZ >= 0 && angleOffsetZ <= 135)
-			rotationX2 = (angleOffsetX - degrees) * (M_PI / 180.0);
-		else if (angleOffsetZ >= 45 && angleOffsetZ <= 135)
-			rotationX2 = (angleOffsetX - degrees) * (M_PI / 180.0);
-		else
-			rotationX2 = (angleOffsetX + degrees) * (M_PI / 180.0);
-	}*/
-
+		return  raycast(raycastCenterPos, direction, range, -1);	
 
 	double rotationZ2 = (angleOffsetZ) * (M_PI / 180.0);
 	double multiplyXY2 = abs(cos(rotationX2));
