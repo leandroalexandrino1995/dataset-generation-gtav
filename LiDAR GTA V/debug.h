@@ -27,13 +27,10 @@ void LogMaxNumberOfPoints(std::string filePath, std::string functionName, float 
 void LogVehicleCornersCoords(std::string filePath, std::string functionName, Entity vehicleHandle, float vehicleAngleZ, std::vector<Vector3> corners, Vector3 centerDot, Vector3 vehiclePos, int resolutionX, int resolutionY, bool cornersRotated);
 void LogVehicleRotations(std::string filePath, std::string functionName, Entity vehicleHandle);
 
+void LogPedestrianRotations(std::string filePath, std::string functionName, Entity vehicleHandle);
+
 // custom log
 void LogCustomInformation(std::string filePath, std::string functionName, std::string title, std::string dataToAppend);
-
-
-
-
-
 
 Vector3 transformPointWorldToLocal(std::vector<std::vector<float>> transformMatrix, Vector3 point);
 

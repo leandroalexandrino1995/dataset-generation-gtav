@@ -34,7 +34,7 @@ class PcRaw:
         self.pc_name = pcName
         self.rotation_amount = self.degreesToRad(camRot)  # rotation around z axis, in radians
         self.list_labels = self.getListLabelsWithinPc(list_raw_labels)
-
+        print("ss: " + str(self.list_labels))
         self.list_raw_pc = list_raw_pc
         self.list_raw_labels = list_raw_labels
         self.list_raw_detailed_labels = list_raw_detailed_labels
@@ -139,6 +139,8 @@ class PcRaw:
         for i in range(0, len(point_cloud_labels)):
             if point_cloud_labels[i] not in list:
                 list.append(point_cloud_labels[i])
+        
+        print(list)
         return list
 
     def debug(self, debug_mode):
@@ -156,6 +158,7 @@ class PcRaw:
         '''
         Create a point cloud with points belonging to the same label/category.
         '''
+        print("Category id: " + str(category_id))
         category_exists = False
         for i in range(0, len(self.list_labels)):
             print("i: " + str(self.list_labels[i]))

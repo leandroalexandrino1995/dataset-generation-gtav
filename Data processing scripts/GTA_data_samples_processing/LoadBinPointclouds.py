@@ -13,11 +13,17 @@ def loadKittiVelodyneFile(file_path, include_luminance = False):
     '''
     # Source: https://github.com/hunse/kitti/blob/master/kitti/velodyne.py
     points = np.fromfile(file_path, dtype=np.float32).reshape(-1, 4)
-    points = points[:, :3]  # exclude luminance
-
     point_tuple_list = []
-    for i in range(len(points)):
-        point_tuple_list.append((points[i][0], points[i][1], points[i][2],))
+    if include_luminance:
+        points = points[:, :4]  # exclude luminance
+
+        for i in range(len(points)):
+            point_tuple_list.append((points[i][0], points[i][1], points[i][2],points[i][3]))
+    else:
+        points = points[:, :3]  # exclude luminance
+
+        for i in range(len(points)):
+            point_tuple_list.append((points[i][0], points[i][1], points[i][2],))
 
     return point_tuple_list
 
@@ -38,7 +44,7 @@ def savePlyFile(filepath, tuple_list, attributes = None, color_for_every_point =
         header_lines.append("property float z")
 
         # if point have color 
-        if attributes == "c":
+        if attributes == "c" or attributes == "i":
             header_lines.append("property uchar red")
             header_lines.append("property uchar green")
             header_lines.append("property uchar blue")
@@ -52,6 +58,13 @@ def savePlyFile(filepath, tuple_list, attributes = None, color_for_every_point =
             if attributes == "c" and len(tuple_list[i]) <= 3:    # if the points dont have color, but the attributes is set to "c"
                 new_tuple = (tuple_list[i][0], tuple_list[i][1], tuple_list[i][2], color_for_every_point[0], color_for_every_point[1], color_for_every_point[2])
                 the_file.write(tupleToStr(new_tuple) + "\n")
+            elif attributes == "i" and len(tuple_list[i]) == 4:
+                # intensity values are between 0 and 1
+                red_percent = int((1 - tuple_list[i][3]) * 255)
+                green_percent = int(tuple_list[i][3] * 255)
+                new_tuple = (tuple_list[i][0], tuple_list[i][1], tuple_list[i][2], red_percent, green_percent, 0)
+                the_file.write(tupleToStr(new_tuple) + "\n")
+
             else:
                 the_file.write(tupleToStr(tuple_list[i]) + "\n")
 

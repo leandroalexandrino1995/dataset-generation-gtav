@@ -24,7 +24,7 @@ class GtaView:
 
         self.transformImageForKittiDataset()
 
-    def transformImageForKittiDataset(self):
+    def transformImageForKittiDataset(self, kittiImageOutputDir = None):
         '''
         Makes the image captured in gta the same dimensions as the images of the kitti dataset.
         '''
@@ -57,7 +57,10 @@ class GtaView:
 
         self.kittiImage = roiImage[startRectRow:startRectRow+desiredRectMiddleHeight, startRectColumn:startRectColumn+desiredRectMiddleWidth]
 
-        cv2.imwrite(os.path.join(".", "hello.png"), self.kittiImage)
+        if kittiImageOutputDir is not None:
+            cv2.imwrite(os.path.join(kittiImageOutputDir, self.fvImgFn), self.kittiImage)
+
+
 
     def getKittiImageDimensions(self):
         kitti_height, kitti_width, kitti_channels = self.kittiImage.shape

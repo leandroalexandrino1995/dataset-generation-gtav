@@ -6,9 +6,12 @@ from LoadBinPointclouds import savePlyFile
 
 def testFunction():
     print("test\n")
-    #kittipointcloud = loadKittiVelodyneFile("000003.bin")
+    kittipointcloud = loadKittiVelodyneFile("hi.bin", include_luminance=True)
 
-    #savePlyFile("1_exp2.ply", kittipointcloud, "c", (0, 150, 150))
+    # read binary pointcloud and add a fixed color to the points
+    #savePlyFile("hi.ply", kittipointcloud, "c", (0, 150, 150))
+
+    savePlyFile("hi.ply", kittipointcloud)
 
 
 ##### Input and output directory paths #####
@@ -60,16 +63,25 @@ for subdir, dirs, files in os.walk(rootDir):
         pc_sample1.savePlyFile("Frontview point cloud.ply", pc_sample1.pcFvData.list_rotated_raw_pc)
 
         # create a point cloud only with points with label = 2, vehicles
-        pc_sample1.pcFvData. \
+        #pc_sample1.pcFvData. \
+        #    generateSingleCategoryPointCloud(2, category_name="vehicles", debug_mode=True)
+
+        pc_sample1.pcData. \
             generateSingleCategoryPointCloud(2, category_name="vehicles", debug_mode=True)
+        
+        pc_sample1.pcData. \
+            generateSingleCategoryPointCloud(1, category_name="pedestrians", debug_mode=True)
 
         # if no vehicle points were detected in the front view point cloud, pass to the next sample
         if 2 not in pc_sample1.pcFvData.single_category_pcs_list.keys():
             continue
-
-        # save the vehicles frontview pointcloud into a file
+        
+        # save the vehicles frontview pointcloud into a file 
         pc_sample1.savePlyFileFromDict("Vehicles point cloud.ply", \
             pc_sample1.pcFvData.single_category_pcs_list[2].getColoredPointCloudDictByDetailedLabels(), attributes = 'c')
+
+        pc_sample1.savePlyFileFromDict("Pedestrians point cloud.ply", \
+            pc_sample1.pcFvData.single_category_pcs_list[1].getColoredPointCloudDictByDetailedLabels(), attributes = 'c')
 
         kittiSample1 = KittiSample(pc_sample1, rootKittiOutputDir, kittiLabelsDir, kittiVelodyneDir, kittiViewsDir, kittiCalibDir, sampleCounter)
 

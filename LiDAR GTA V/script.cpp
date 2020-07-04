@@ -70,7 +70,10 @@ std::string playerRotationsFilename = lidarParentDir + "/_rotationsDB.txt";
 std::string lidarHeightFilename = "_lidarHeight.txt";
 
 // file holding vehicle information: position, rotation, projection coordinates, ...
-std::string vehiclesInSampleFilename = "_vehicles_dims.txt";	
+std::string vehiclesInSampleFilename = "_vehicles_dims.txt";
+
+// file holding pedestrian information: position, rotation, projection coordinates, ...
+std::string pedestriansInSampleFilename = "_pedestrians_dims.txt";
 
 // character rotation
 std::string playerRotationInSampleFilename = "_rotation.txt";
@@ -193,7 +196,9 @@ std::vector<int> pointsPerVerticalStep;
 
 // store information of different vehicles detected by the lidar
 // Values per vehicle: "Entity | Hash | Vector3 minDimCoords | Projected minDimCoords | Vector3 maxDimCoords | Projected minDimCoords | Posx | Posy | Posz | Rotx | Roty | Rotz | Vehicle center Projection Coords"
-std::map<Entity, std::string> vehiclesLookupTable;		
+std::map<Entity, std::string> vehiclesLookupTable;	
+
+//std::map<Entity, std::string> pedestriansLookupTable;
 
 #pragma endregion
 
@@ -1001,6 +1006,8 @@ void SetupGameForLidarScan(double horiFovMin, double horiFovMax, double vertFovM
 
 	// remove all elements from the dictionary
 	vehiclesLookupTable.clear();
+
+	//pedestriansLookupTable.clear();
 }
 
 float distanceBetween3dPoints(Vector3 p1, Vector3 p2)
@@ -1180,12 +1187,14 @@ Vector3 FindCenterCoordsOf3Dbox(std::vector<Vector3> corners, Vector3 vehiclePos
 
 void RegisterVehicleInformation(Entity vehicleHandle, std::string entityType, std::string filePath)
 {
-	if (entityType.compare("Vehicle") != 0)		// the entity is not a vehicle
+	if (entityType.compare("Vehicle") != 0 && entityType.compare("HumansAnimals") != 0)		// the entity is not a vehiclen nor a pedestrian
 		return;
 
 	// check if vehicle is already in the dictionary, if so, ignore the point
-	if (vehiclesLookupTable.count(vehicleHandle) == 1) // if there is already 
+	if (vehiclesLookupTable.count(vehicleHandle) == 1) // if there is already the same vehicle in the dictionary
 		return;
+	//else if (entityType.compare("HumansAnimals") != 0 && pedestriansLookupTable.count(vehicleHandle) == 1) // if there is already the same pedestrian in the dictionary
+	//	return;
 
 	LogVehicleRotations(filePath + lidarFrameLogFilePathDebug, "RegisterVehicleInformation", vehicleHandle);
 
@@ -1327,21 +1336,40 @@ void RegisterVehicleInformation(Entity vehicleHandle, std::string entityType, st
 	//						| objectType | truncated | 
 	//						| forwardVecX | forwardVecY | forwardVecZ"
 
-	// insert vehicle into the dictionary
-	vehiclesLookupTable[vehicleHandle] = std::to_string(vehicleHandle) + " " + std::to_string(vehicleHash) + " "
-		+ std::to_string(minMaxVectors[0].x) + " " + std::to_string(minMaxVectors[0].y) + " " + std::to_string(minMaxVectors[0].z) + " "
-		+ std::to_string((int)(minxProjected * resolutionX * 1.5)) + " " + std::to_string((int)(minyProjected * resolutionY * 1.5)) + " "
-		+ std::to_string(minMaxVectors[1].x) + " " + std::to_string(minMaxVectors[1].y) + " " + std::to_string(minMaxVectors[1].z) + " "
-		+ std::to_string((int)(maxxProjected * resolutionX * 1.5)) + " " + std::to_string((int)(maxyProjected * resolutionY * 1.5)) + " "
-		+ std::to_string(vehicleTrueCenter.x - centerDot.x) + " " + std::to_string(vehicleTrueCenter.y - centerDot.y) + " " + std::to_string(vehicleTrueCenter.z - centerDot.z) + " "
-		+ std::to_string(vehicleRotation.x) + " " + std::to_string(vehicleRotation.y) + " " + std::to_string(vehicleRotation.z) + " "
-		+ std::to_string((int)(minxVehicleProjected * resolutionX * 1.5)) + " " + std::to_string((int)(minyVehicleProjected * resolutionY * 1.5)) + " "
-		+ std::to_string(vehicleDimWidth) + " " + std::to_string(vehicleDimHeight) + " " + std::to_string(vehicleDimLength) + " "
-		+ "Car" + " " + std::to_string(truncated) + " "
-		+ std::to_string(vehicleLocalForwardVector.x) + " " + std::to_string(vehicleLocalForwardVector.y) + " " + std::to_string(vehicleLocalForwardVector.z);
+	if (entityType.compare("Vehicle") == 0)
+	{
+		// insert vehicle into the dictionary
+		vehiclesLookupTable[vehicleHandle] = std::to_string(vehicleHandle) + " " + std::to_string(vehicleHash) + " "
+			+ std::to_string(minMaxVectors[0].x) + " " + std::to_string(minMaxVectors[0].y) + " " + std::to_string(minMaxVectors[0].z) + " "
+			+ std::to_string((int)(minxProjected * resolutionX * 1.5)) + " " + std::to_string((int)(minyProjected * resolutionY * 1.5)) + " "
+			+ std::to_string(minMaxVectors[1].x) + " " + std::to_string(minMaxVectors[1].y) + " " + std::to_string(minMaxVectors[1].z) + " "
+			+ std::to_string((int)(maxxProjected * resolutionX * 1.5)) + " " + std::to_string((int)(maxyProjected * resolutionY * 1.5)) + " "
+			+ std::to_string(vehicleTrueCenter.x - centerDot.x) + " " + std::to_string(vehicleTrueCenter.y - centerDot.y) + " " + std::to_string(vehicleTrueCenter.z - centerDot.z) + " "
+			+ std::to_string(vehicleRotation.x) + " " + std::to_string(vehicleRotation.y) + " " + std::to_string(vehicleRotation.z) + " "
+			+ std::to_string((int)(minxVehicleProjected * resolutionX * 1.5)) + " " + std::to_string((int)(minyVehicleProjected * resolutionY * 1.5)) + " "
+			+ std::to_string(vehicleDimWidth) + " " + std::to_string(vehicleDimHeight) + " " + std::to_string(vehicleDimLength) + " "
+			+ "Car" + " " + std::to_string(truncated) + " "
+			+ std::to_string(vehicleLocalForwardVector.x) + " " + std::to_string(vehicleLocalForwardVector.y) + " " + std::to_string(vehicleLocalForwardVector.z);
 
+	}
+	else if (entityType.compare("HumansAnimals") == 0)
+	{
+		// insert vehicle into the dictionary
+		vehiclesLookupTable[vehicleHandle] = std::to_string(vehicleHandle) + " " + std::to_string(vehicleHash) + " "
+			+ std::to_string(minMaxVectors[0].x) + " " + std::to_string(minMaxVectors[0].y) + " " + std::to_string(minMaxVectors[0].z) + " "
+			+ std::to_string((int)(minxProjected * resolutionX * 1.5)) + " " + std::to_string((int)(minyProjected * resolutionY * 1.5)) + " "
+			+ std::to_string(minMaxVectors[1].x) + " " + std::to_string(minMaxVectors[1].y) + " " + std::to_string(minMaxVectors[1].z) + " "
+			+ std::to_string((int)(maxxProjected * resolutionX * 1.5)) + " " + std::to_string((int)(maxyProjected * resolutionY * 1.5)) + " "
+			+ std::to_string(vehicleTrueCenter.x - centerDot.x) + " " + std::to_string(vehicleTrueCenter.y - centerDot.y) + " " + std::to_string(vehicleTrueCenter.z - centerDot.z) + " "
+			+ std::to_string(vehicleRotation.x) + " " + std::to_string(vehicleRotation.y) + " " + std::to_string(vehicleRotation.z) + " "
+			+ std::to_string((int)(minxVehicleProjected * resolutionX * 1.5)) + " " + std::to_string((int)(minyVehicleProjected * resolutionY * 1.5)) + " "
+			+ std::to_string(vehicleDimWidth) + " " + std::to_string(vehicleDimHeight) + " " + std::to_string(vehicleDimLength) + " "
+			+ "Pedestrian" + " " + std::to_string(truncated) + " "
+			+ std::to_string(vehicleLocalForwardVector.x) + " " + std::to_string(vehicleLocalForwardVector.y) + " " + std::to_string(vehicleLocalForwardVector.z);
+	}
 	//+ std::to_string(vehiclePos.x - centerDot.x) + " " + std::to_string(vehiclePos.y - centerDot.y) + " " + std::to_string(vehiclePos.z - centerDot.z) + " "
 }
+
 
 Vector3 rotate_point_around_z_axis(Vector3 point, float angle)
 {
