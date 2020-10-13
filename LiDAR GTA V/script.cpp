@@ -262,7 +262,7 @@ void ScriptMain()
 		// keyboard commands information
 		if (IsKeyJustUp(VK_F1))
 		{
-			notificationOnLeft("- F2: Scan current environment\n- F3: start/stop recording player position\n- F4: scripthook V menu\n- F5: start/stop automatic scanning");
+			notificationOnLeft("- F2: Snapshot current environment\n- F3: start/stop recording player position\n- F4: scripthook V menu\n- F5: start/stop automatic scanning\n - F6: Lower population density\n - F7: Increase population density");
 		}
 
 		// decrease vehicle and ped density multipliers
@@ -1004,7 +1004,7 @@ void SetupGameForLidarScan(double horiFovMin, double horiFovMax, double vertFovM
 
 	lidarScanPrep = true;
 
-	// remove all elements from the dictionary
+	// remove all elements from the dictionary, from the previous snapshot
 	vehiclesLookupTable.clear();
 
 	//pedestriansLookupTable.clear();
