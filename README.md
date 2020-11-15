@@ -71,7 +71,6 @@ Here is a demonstration of the process involved in obtaining sequential point cl
 
 ## TODO
 
-- Align camera with player direction
 - Complete the slope correction solution
 
 ## Resources
