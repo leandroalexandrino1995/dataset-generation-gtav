@@ -1,4 +1,4 @@
-# Deep Learning Classification using 3D Point Clouds 
+# Synthetic dataset generation for Deep Learning architectures used in autonomous vehicles 
 
 ## Table of Contents
 - [Objective](#objective)
