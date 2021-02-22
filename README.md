@@ -22,6 +22,10 @@ For more details check the [wiki](https://github.com/Diogo525/DL-Classification-
 
 The dataset of colored 3D point clouds is obtained through the simulation of a camera and LiDAR sensor in the GTA V overworld. The resolution of the resulting point clouds is specified in the [LiDAR GTA V.cfg](https://github.com/Diogo525/DL-Classification-using-3D-Point-Clouds/blob/master/Data%20processing%20scripts/LiDAR%20GTA%20V.cfg) file. The resulting GTA V mod file that accomplishes the task of data gathering is **LiDAR GTA V.asi** (found in the output directory of the project: bin/Release/LiDAR GTA V.asi).
 
+## Generated Dataset for 3D Object Identification
+
+- https://drive.google.com/file/d/182jN7Zl6hEqCkpaVuPjpTCc0pKqOtFzi/view?usp=sharing
+
 ## Software
 
 - GTA V
