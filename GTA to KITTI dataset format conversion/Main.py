@@ -9,6 +9,8 @@ from dataclasses import dataclass
 from UiConfigParams import ConfigParams, EntityType, PointAttributes
 from KittiSampleManager import KittiSampleManager
 
+import string
+
 # kitti labels output directory
 #kittiLabelsDir = 'data_object_label_2/training/label_2/'
 # velodyne samples output directory
@@ -28,6 +30,8 @@ def compute(rootDir, rootKittiOutputDir, configurations):
 
     # walk through all samples in rootDir and create the kitti output accordingly
     for subdir, dirs, files in os.walk(rootDir):
+        # preserve the order of the original point clouds
+        dirs = sorted(dirs, key=lambda filename: int(filename.replace('LiDAR_PointCloud','')))
         for dirName in dirs:
             print('\n\n::::::: Current sample directory: ' + dirName + ' :::::::')
             
@@ -148,6 +152,6 @@ if __name__=='__main__':
                 print("The --ignoreEntities can only hold two possible values {1, 2}")
                 allowExecution = False
 
-        compute(args.gtaSamplesPath + '\\', args.kittiOutputPath + '\\', configurations)
+        compute(args.gtaSamplesPath + '/', args.kittiOutputPath + '/', configurations)
     else:
         print("The options --gtaSamplesPath, --kittiOutputPath and --targetArchitecure are required to run the program.")
