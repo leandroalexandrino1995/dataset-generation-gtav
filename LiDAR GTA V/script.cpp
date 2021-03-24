@@ -252,6 +252,10 @@ void ScriptMain()
 	auto start_time_after_teleport = std::chrono::high_resolution_clock::now();
 	auto start_timer = std::chrono::high_resolution_clock::now();
 
+	Vector3 playerStartingPos = ENTITY::GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(PLAYER::PLAYER_PED_ID(), 99, 99, 99);
+
+	boolean playerMoved;
+
 	// event handling loop
 	while (true)
 	{
@@ -496,16 +500,22 @@ void ScriptMain()
 
 		if (autodriveScan) {
 			auto currentTime = std::chrono::high_resolution_clock::now();
+			Vector3 playerCurrentPos = ENTITY::GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(PLAYER::PLAYER_PED_ID(), 0, 0, 0);/*-halfCharacterHeight);*/;
 
 			double elapsedTime = std::chrono::duration_cast<std::chrono::seconds>(currentTime - start_timer).count();
+			// check if the car is stuck in traffic
+			playerMoved = (playerStartingPos.x != playerCurrentPos.x) || (playerStartingPos.y != playerCurrentPos.y) || (playerStartingPos.z != playerCurrentPos.z);
 
-			if (elapsedTime > 7 && multiScanCounter < 200 && !scanLive && !takeSnap)
+			if (elapsedTime > 7 && multiScanCounter < 200 && !scanLive && !takeSnap && playerMoved)
 			{
 				scanLive = true;
 				takeSnap = true;
 				multiScanCounter++;
 			}
-			if (multiScanCounter >= 200) {
+			else if (!playerMoved) {
+				start_timer = currentTime;
+			}
+			else if (multiScanCounter >= 200) {
 				autodriveScan = false;
 			}
 		}
@@ -622,7 +632,10 @@ void ScriptMain()
 						notificationOnLeft("Snapshots taken: " + std::to_string(lidarScansCounter - singleScanCounter) + "\n\nCompleted: " + std::to_string(percentageComplete) + "%");
 				}
 			}
+			// start counting the time
 			start_timer = std::chrono::high_resolution_clock::now();
+			// check if the player moved
+			playerStartingPos = ENTITY::GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(PLAYER::PLAYER_PED_ID(), 0, 0, 0);
 		}
 
 		WAIT(0);
