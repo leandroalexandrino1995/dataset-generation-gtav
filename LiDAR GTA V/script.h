@@ -79,6 +79,8 @@ std::vector<double> split(const std::string& s, char delimiter);
 
 void SetupGameForLidarScan(double horiFovMin, double horiFovMax, double vertFovMin, double vertFovMax, double horiStep, double vertStep, std::string filePath, std::ofstream& log);
 
+void TakeCameraImages(std::string filePath);
+
 void PostLidarScanProcessing(std::string filePath);
 
 float distanceBetween3dPoints(Vector3 p1, Vector3 p2);

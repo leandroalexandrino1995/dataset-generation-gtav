@@ -20,6 +20,7 @@
 #include <filesystem>
 #include <regex>
 #include "debug.h"
+#include <thread>
 
 #pragma comment(lib, "gdiplus.lib")
 
@@ -122,6 +123,8 @@ bool haveRecordedPositions = false;
 // If the user has already performed (and interrupted) the automatic lidar scanning in the current instance of the game.
 bool hasStartedAndStoppedAutoScan = false;			
 
+bool autodriveScan = false;
+
 #pragma endregion
 
 #pragma region Counters
@@ -130,6 +133,7 @@ bool hasStartedAndStoppedAutoScan = false;
 int positionsCounter = 0;
 // Number of single scans performed (F2 key)
 int singleScanCounter = 0;
+int multiScanCounter = 0;
 // Number of lidar scans completed
 int lidarScansCounter = 0;	
 // number of lines of the file with the route positions
@@ -246,6 +250,7 @@ void ScriptMain()
 
 	auto start_time_for_collecting_positions = std::chrono::high_resolution_clock::now();
 	auto start_time_after_teleport = std::chrono::high_resolution_clock::now();
+	auto start_timer = std::chrono::high_resolution_clock::now();
 
 	// event handling loop
 	while (true)
@@ -295,6 +300,12 @@ void ScriptMain()
 			scanLive = true;
 			takeSnap = true;
 			singleScanCounter++;
+		}
+
+		// teleport the character to the start position of the route, or the landmark from where the automatic scanning was interrupted/stopped
+		if (IsKeyJustUp(VK_F8) && !isAutoScanning && !isRecordingPositions)
+		{
+			autodriveScan = true;
 		}
 
 		// start or stop recording the player's positions
@@ -483,6 +494,22 @@ void ScriptMain()
 			}
 		}
 
+		if (autodriveScan) {
+			auto currentTime = std::chrono::high_resolution_clock::now();
+
+			double elapsedTime = std::chrono::duration_cast<std::chrono::seconds>(currentTime - start_timer).count();
+
+			if (elapsedTime > 7 && multiScanCounter < 200 && !scanLive && !takeSnap)
+			{
+				scanLive = true;
+				takeSnap = true;
+				multiScanCounter++;
+			}
+			if (multiScanCounter >= 200) {
+				autodriveScan = false;
+			}
+		}
+
 		// output stream for writing log information into the log.txt file
 		std::ofstream log;
 		
@@ -595,6 +622,7 @@ void ScriptMain()
 						notificationOnLeft("Snapshots taken: " + std::to_string(lidarScansCounter - singleScanCounter) + "\n\nCompleted: " + std::to_string(percentageComplete) + "%");
 				}
 			}
+			start_timer = std::chrono::high_resolution_clock::now();
 		}
 
 		WAIT(0);
@@ -1475,12 +1503,12 @@ void lidar(double horiFovMin, double horiFovMax, double vertFovMin, double vertF
 	}
 }
 
-void PostLidarScanProcessing(std::string filePath)
+void TakeCameraImages(std::string filePath)
 {
 	float cam_rotz;
 
 	Vector3 playerCurRot = ENTITY::GET_ENTITY_ROTATION(PLAYER::PLAYER_PED_ID(), 0);
-	
+
 	//Set clear weather
 	GAMEPLAY::CLEAR_OVERRIDE_WEATHER();
 	GAMEPLAY::SET_OVERRIDE_WEATHER("CLEAR");
@@ -1573,7 +1601,12 @@ void PostLidarScanProcessing(std::string filePath)
 		}
 		//log << "Done.\n";
 	}
-	
+}
+
+void PostLidarScanProcessing(std::string filePath)
+{
+	TakeCameraImages(filePath);
+
 	std::string fileOutputLines = "";
 	std::string fileOutputPointsLines = "";
 	std::string fileOutputErrorLines = "";
