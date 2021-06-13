@@ -83,14 +83,16 @@ class GtaSample:
         pointLabelsDetailed = self.loadTxtFileIntoIntList(configurations.pcLabelsDetailedFn)
 
         # load file with the points + projected coords and view indexes
-        pointProjections = self.loadTxtFileIntoTupleFloatList(configurations.pcProjectedPointsFn, [3, 4, 5], [0, 1, 2])   # 3, 4, 5 correspond to integer values of projx, projy, view_index
+        # pointProjections = self.loadTxtFileIntoTupleFloatList(configurations.pcProjectedPointsFn, [3, 4, 5], [0, 1, 2])   # 3, 4, 5 correspond to integer values of projx, projy, view_index
 
-        self.pcData = PcRaw(originalPc, pointLabels, pointLabelsDetailed, pointProjections, camRot=self.camRotation, debugMode=True, pcName="Original")
+        # self.pcData = PcRaw(originalPc, pointLabels, pointLabelsDetailed, pointProjections, camRot=self.camRotation, debugMode=True, pcName="Original")
+        # self.pcData = PcRaw(originalPc, pointLabels, pointLabelsDetailed, camRot=self.camRotation, debugMode=True, pcName="Original")
+        self.pcData = PcRaw(originalPc, pointLabels, pointLabelsDetailed, camRot=self.camRotation, debugMode=False, pcName="Original")
 
         # eliminate all points that are not projected onto the first view (index 0) and store the remaining points in a list of tuples
-        frontviewPc, fvPcLabels, fvPcLabelsDetailed, fvPcProjected = \
-            self.createFrontviewPc(self.pcData.list_rotated_raw_pc, self.pcData.list_raw_labels, self.pcData.list_raw_detailed_labels, self.pcData.list_raw_projected_points, orientedToXdirection=True)
-        self.pcFvData = PcRaw(frontviewPc, fvPcLabels, fvPcLabelsDetailed, fvPcProjected, camRot=0, debugMode=True, pcName="Front view")
+        # frontviewPc, fvPcLabels, fvPcLabelsDetailed, fvPcProjected = \
+        #     self.createFrontviewPc(self.pcData.list_rotated_raw_pc, self.pcData.list_raw_labels, self.pcData.list_raw_detailed_labels, self.pcData.list_raw_projected_points, orientedToXdirection=True)
+        # self.pcFvData = PcRaw(frontviewPc, fvPcLabels, fvPcLabelsDetailed, fvPcProjected, camRot=0, debugMode=True, pcName="Front view")
 
 
     def loadTxtFileIntoStrList(self, filename):
@@ -140,7 +142,7 @@ class GtaSample:
             for line in file_in:
                 lines.append(int(line))
 
-        print("-------> " + str(len(lines)))
+        # print("-------> " + str(len(lines))) # <- tirei aqui
         return lines
 
     def loadTxtFileIntoTupleFloatList(self, filename, integer_indices_list = [], ignore_indices = []):
@@ -153,6 +155,7 @@ class GtaSample:
         Return:
             - list of tuples containing the float values
         '''
+
         lines = []
         with open(os.path.join(self.directory_path, filename)) as file_in:
             for line in file_in:
@@ -211,7 +214,7 @@ class GtaSample:
             for line in file_in:
                 list = []
                 line_list = line.rstrip().split(' ')
-                #print(line_list)
+                # print(line_list) # <- tirei aqui
                 key = line_list[0]
                 
                 for i in range(1, len(line_list)):

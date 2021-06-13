@@ -35,10 +35,10 @@ class GtaView:
 
         self.kittiCamImage = self.imageResize(self.gtaImage, width = 1392)
         h_kitti, w_kitti, c_kitti = self.kittiCamImage.shape
-        print(self.kittiCamImage.shape)
+        # print(self.kittiCamImage.shape) # <- tirei aqui
 
         self.resizePercentage = w_kitti/w_gta # 0.725
-        print(self.resizePercentage)
+        # print(self.resizePercentage) # <- tirei aqui
 
         # cut height to 512 pixels (obtained the region of interest (roi)); maintain the same width
         roiDesiredMiddleHeight = 512
@@ -52,8 +52,8 @@ class GtaView:
 
         startRectRow = int((h_roi-desiredRectMiddleHeight)/2)
         startRectColumn = int((w_roi-desiredRectMiddleWidth)/2)
-        print("kitti cut x: " + str(startRectRow))
-        print("kitti cut y: " + str(startRectColumn))
+        # print("kitti cut x: " + str(startRectRow)) # <- tirei aqui
+        # print("kitti cut y: " + str(startRectColumn)) # <- tirei aqui
 
         self.kittiImage = roiImage[startRectRow:startRectRow+desiredRectMiddleHeight, startRectColumn:startRectColumn+desiredRectMiddleWidth]
 
@@ -109,7 +109,7 @@ class GtaView:
         resized_image = cv2.resize(image, (0,0), fx=window_size, fy=window_size) 
 
         cv2.imshow(window_title + ", " + str(int(window_size*100)) + "% zoom", resized_image)
-        print("Press any key to continue...")
+        # print("Press any key to continue...") # <- tirei aqui
         cv2.waitKey(0)
         
     def saveImage(self, image, dirPath, filename):
@@ -143,7 +143,7 @@ class GtaView:
 
         cv2.imshow(window_title + ", " + str(int(window_size*100)) + "% zoom", resized_image)
 
-        print("Press any key to continue...")
+        # print("Press any key to continue...") # <- tirei aqui
         cv2.waitKey(0)
         cv2.destroyAllWindows()
 
@@ -165,17 +165,17 @@ class GtaView:
         |                             |  | ub_bar_width
         |_____________________________|  |
         '''
-        print("original_width: " + str(original_width))
-        print("kitti_width: " + str(kitti_width))
-        print("kitti_height: " + str(kitti_height))
+        # print("original_width: " + str(original_width)) # <- tirei aqui
+        # print("kitti_width: " + str(kitti_width)) # <- tirei aqui
+        # print("kitti_height: " + str(kitti_height)) # <- tirei aqui
         kci_h, kci_w, kci_c = self.kittiCamImage.shape
-        print("kitti_cam_width: " + str(kci_w))
-        print("kitti_cam_height: " + str(kci_h))
+        # print("kitti_cam_width: " + str(kci_w)) # <- tirei aqui
+        # print("kitti_cam_height: " + str(kci_h)) # <- tirei aqui
 
         lr_bar = int((kci_w-kitti_width) / 2)
         ub_bar = int((kci_h-kitti_height) / 2)
-        print("lr_bar_width: " + str(lr_bar))
-        print("ub_bar_height: " + str(ub_bar))
+        # print("lr_bar_width: " + str(lr_bar)) # <- tirei aqui
+        # print("ub_bar_height: " + str(ub_bar)) # <- tirei aqui
 
         resize_percentage = kci_w/original_width # 0.725
 

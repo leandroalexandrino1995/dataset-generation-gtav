@@ -57,6 +57,7 @@ class Calibration:
         mat = [[fx, 0., Cu, 0.],
                 [0., fy, Cv, 0.],
                 [0., 0., 1., 0.]]
+
         mat = np.array(mat)
         return np.reshape(mat, [3,4])
 

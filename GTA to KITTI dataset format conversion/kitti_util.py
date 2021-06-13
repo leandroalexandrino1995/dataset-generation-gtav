@@ -21,7 +21,7 @@ def project_to_image(pts_3d, P):
     '''
     n = pts_3d.shape[0]
     pts_3d_extend = np.hstack((pts_3d, np.ones((n,1))))
-    print(('pts_3d_extend shape: ', pts_3d_extend.shape))
+    #print(('pts_3d_extend shape: ', pts_3d_extend.shape))
     pts_2d = np.dot(pts_3d_extend, np.transpose(P)) # nx3
     pts_2d[:,0] /= pts_2d[:,2]
     pts_2d[:,1] /= pts_2d[:,2]
@@ -82,15 +82,15 @@ def compute_box_3d(l, w, h, ry, t, P, R0, C2V_mat): #obj, P):
     # rotate and translate 3d bounding box
     corners_3d = np.dot(R, np.vstack([x_corners,y_corners,z_corners]))
 
-    print("corners: " + str(corners_3d))
+    #print("corners: " + str(corners_3d))
 
-    print("object center: " + str(t))
+    #print("object center: " + str(t))
 
     corners_3d[0,:] = corners_3d[0,:] + t[0];
     corners_3d[1,:] = corners_3d[1,:] + t[1];
     corners_3d[2,:] = corners_3d[2,:] + t[2];
 
-    print("corners >>: " + str(corners_3d))
+    #print("corners >>: " + str(corners_3d))
 
     # project the 3d bounding box into the image plane
     corners_2d = project_to_image(np.transpose(corners_3d), P);
@@ -112,7 +112,7 @@ def draw_projected_box3d(image, qs, color=(255,255,255), thickness=2):
           |/         |/
           6 -------- 7
     '''
-    print("qs: " + str(qs))
+    #print("qs: " + str(qs))
 
     qs = qs.astype(np.int32)
     for k in range(0,4):

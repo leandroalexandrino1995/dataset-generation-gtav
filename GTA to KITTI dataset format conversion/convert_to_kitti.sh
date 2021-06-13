@@ -1,4 +1,4 @@
 #!/bin/bash
 
-Main.py --gtaSamplesPath "../../dataset/gta" --kittiOutputPath "../../dataset/kitti" --targetArchitecure "FrustumPointnet"
+Main.py --gtaSamplesPath "../../Removed/GTAtoKITTI/gta" --kittiOutputPath "../../Removed/GTAtoKITTI/kitti" --targetArchitecure "FrustumPointnet"
 

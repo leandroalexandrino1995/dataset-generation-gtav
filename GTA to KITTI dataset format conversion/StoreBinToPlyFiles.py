@@ -27,5 +27,5 @@ for subdir, dirs, files in os.walk(pathToPointcloudBinDirectory):
 
         counter+=1
 
-        print(str(int(counter/len(files) * 100)) + '%')
+        # print(str(int(counter/len(files) * 100)) + '%') # <- tirei aqui
 

@@ -9,6 +9,8 @@ from dataclasses import dataclass
 from UiConfigParams import ConfigParams, EntityType, PointAttributes
 from KittiSampleManager import KittiSampleManager
 
+import sys
+
 import string
 
 # kitti labels output directory
@@ -23,68 +25,115 @@ import string
 def compute(rootDir, rootKittiOutputDir, configurations):
     
     # to generate the naming sequence for the kitti samples
-    gtaSampleCounter = 0 
-    kittiSampleCounter = 0  
+    gtaSampleCounter = len(os.listdir(rootDir))
 
-    print("Current number of samples in " + rootKittiOutputDir + ": " + str(gtaSampleCounter))
+    try:
+        kittiTrainSampleCounter = len(os.listdir(rootKittiOutputDir+ConfigParams.kittiLabelsDir))
+    except FileNotFoundError:
+        kittiTrainSampleCounter = 0
+    
+    try:
+        kittiTestSampleCounter = len(os.listdir(rootKittiOutputDir+ConfigParams.kittiVelodyneDirTesting))
+    except FileNotFoundError:
+        kittiTestSampleCounter = 0
+
+    kittiSampleCounter = kittiTrainSampleCounter + kittiTestSampleCounter
+
+    # print(len(os.listdir(rootKittiOutputDir+"/data_object_label_2/training/label_2")))
+
+    print("Current number of samples in " + rootKittiOutputDir + ": " + str(kittiSampleCounter))
+    print("Current number of training samples: " + str(kittiTrainSampleCounter))
+    print("Current number of testing samples: " + str(kittiTestSampleCounter))
+    print("Number of GTA samples: " + str(gtaSampleCounter))
+
+    f = open("GTASample.txt", "r")
+    GTAFolder = int(f.read())
+    toSave = GTAFolder
+    # GTAFolder = int(GTAFolder.replace('LiDAR_PointCloud',''))
+    # print(GTAFolder)
 
     # walk through all samples in rootDir and create the kitti output accordingly
     for subdir, dirs, files in os.walk(rootDir):
         # preserve the order of the original point clouds
         dirs = sorted(dirs, key=lambda filename: int(filename.replace('LiDAR_PointCloud','')))
-        for dirName in dirs:
+        for dirName in dirs[GTAFolder:]:
             print('\n\n::::::: Current sample directory: ' + dirName + ' :::::::')
             
-            # load sample (point cloud + front view image) and create the original pointcloud, a rotated point cloud, a front view point cloud, the kitti dataset resolution image
-            pc_sample1 = GtaSample(rootDir + dirName, configurations)
-            
-            # save the original point cloud (not rotated) into a file
-            #pc_sample1.savePlyFile('Original point cloud.ply', pc_sample1.pcData.list_raw_pc)
-            
-            pc_sample1.savePlyFile(configurations.rotatedPointCloudFn, pc_sample1.pcData.list_rotated_raw_pc)
-            
-            pc_sample1.savePlyFile(configurations.frontviewPointCloudFn, pc_sample1.pcFvData.list_rotated_raw_pc)
-            
-            # create a point cloud only with points with label = 2, vehicles
-            #pc_sample1.pcFvData. \
-            #    generateSingleCategoryPointCloud(2, category_name="vehicles", debug_mode=True)
+            try:
 
-            pc_sample1.pcData. \
-                generateSingleCategoryPointCloud(EntityType.VEHICLE.value, category_name="vehicles", debug_mode=True)
-            
-            pc_sample1.pcData. \
-                generateSingleCategoryPointCloud(EntityType.PEDESTRIAN.value, category_name='pedestrians', debug_mode=True)
-            
-            # if no vehicle points were detected in the front view point cloud, pass to the next sample
-            
-            # ignore sample if it does not contain any of the desired entity types 
-            if not EntityType.VEHICLE.value in pc_sample1.pcFvData.single_category_pcs_list.keys() \
-                and not EntityType.PEDESTRIAN.value in pc_sample1.pcFvData.single_category_pcs_list.keys():
-                continue
+                # load sample (point cloud + front view image) and create the original pointcloud, a rotated point cloud, a front view point cloud, the kitti dataset resolution image
+                pc_sample1 = GtaSample(rootDir + dirName, configurations)   
+                
+                # save the original point cloud (not rotated) into a file
+                #pc_sample1.savePlyFile('Original point cloud.ply', pc_sample1.pcData.list_raw_pc)
+                
+                # pc_sample1.savePlyFile(configurations.rotatedPointCloudFn, pc_sample1.pcData.list_rotated_raw_pc)
+                
+                # pc_sample1.savePlyFile(configurations.frontviewPointCloudFn, pc_sample1.pcFvData.list_rotated_raw_pc)
+                
+                # create a point cloud only with points with label = 2, vehicles
+                #pc_sample1.pcFvData. \
+                #    generateSingleCategoryPointCloud(2, category_name="vehicles", debug_mode=False)
 
-            if configurations.genSingleEntities:
-                if EntityType.VEHICLE.value in pc_sample1.pcFvData.single_category_pcs_list.keys():
-                    # save the vehicles frontview pointcloud into a file 
-                    pc_sample1.savePlyFileFromDict(configurations.vehiclesOnlyPointCloudFn, \
-                        pc_sample1.pcData.single_category_pcs_list[EntityType.VEHICLE.value].getColoredPointCloudDictByDetailedLabels(), attributes = PointAttributes.COLOR.value)
+                pc_sample1.pcData. \
+                    generateSingleCategoryPointCloud(EntityType.VEHICLE.value, category_name="vehicles", debug_mode=False)
+                
+                pc_sample1.pcData. \
+                    generateSingleCategoryPointCloud(EntityType.PEDESTRIAN.value, category_name='pedestrians', debug_mode=False)
+                
+                # if no vehicle points were detected in the front view point cloud, pass to the next sample
+                
+                # ignore sample if it does not contain any of the desired entity types 
+                # if not EntityType.VEHICLE.value in pc_sample1.pcFvData.single_category_pcs_list.keys() \
+                #     and not EntityType.PEDESTRIAN.value in pc_sample1.pcFvData.single_category_pcs_list.keys():
+                #     continue
 
-                if EntityType.PEDESTRIAN.value in pc_sample1.pcFvData.single_category_pcs_list.keys():
-                    # save the vehicles frontview pointcloud into a file 
-                    pc_sample1.savePlyFileFromDict(configurations.pedestriansOnlyPointCloudFn, \
-                        pc_sample1.pcData.single_category_pcs_list[EntityType.PEDESTRIAN.value].getColoredPointCloudDictByDetailedLabels(), attributes = PointAttributes.COLOR.value)
+                if configurations.genSingleEntities:
+                    if EntityType.VEHICLE.value in pc_sample1.pcFvData.single_category_pcs_list.keys():
+                        # save the vehicles frontview pointcloud into a file 
+                        pc_sample1.savePlyFileFromDict(configurations.vehiclesOnlyPointCloudFn, \
+                            pc_sample1.pcData.single_category_pcs_list[EntityType.VEHICLE.value].getColoredPointCloudDictByDetailedLabels(), attributes = PointAttributes.COLOR.value)
 
-            if configurations.genCloudsWithoutBackground:
-                pointsList = pc_sample1.pcData.generatePointCloudWithoutBackground([EntityType.VEHICLE.value, EntityType.PEDESTRIAN.value])
+                    if EntityType.PEDESTRIAN.value in pc_sample1.pcFvData.single_category_pcs_list.keys():
+                        # save the vehicles frontview pointcloud into a file 
+                        pc_sample1.savePlyFileFromDict(configurations.pedestriansOnlyPointCloudFn, \
+                            pc_sample1.pcData.single_category_pcs_list[EntityType.PEDESTRIAN.value].getColoredPointCloudDictByDetailedLabels(), attributes = PointAttributes.COLOR.value)
 
-                pc_sample1.savePlyFile(configurations.noBackgroundPointsCloudFn, pointsList)
+                if configurations.genCloudsWithoutBackground:
+                    pointsList = pc_sample1.pcData.generatePointCloudWithoutBackground([EntityType.VEHICLE.value, EntityType.PEDESTRIAN.value])
 
-            #pc_sample1.savePlyFileFromDict("Pedestrians point cloud.ply", \
-            #    pc_sample1.pcFvData.single_category_pcs_list[1].getColoredPointCloudDictByDetailedLabels(), attributes = 'c')
+                    pc_sample1.savePlyFile(configurations.noBackgroundPointsCloudFn, pointsList)
 
-            kittiSample = KittiSampleManager(pc_sample1, rootKittiOutputDir, kittiSampleCounter, configurations)
+                    # pc_sample1.savePlyFile(configurations.rotatedPointCloudFn, pointsList)
+                
+                else:
+                    pc_sample1.savePlyFile(configurations.rotatedPointCloudFn, pc_sample1.pcData.list_rotated_raw_pc)
 
-            if not kittiSample.isEmpty:
-                kittiSampleCounter += 1
+                #pc_sample1.savePlyFileFromDict("Pedestrians point cloud.ply", \
+                #    pc_sample1.pcFvData.single_category_pcs_list[1].getColoredPointCloudDictByDetailedLabels(), attributes = 'c')
+
+                kittiSample = KittiSampleManager(pc_sample1, rootKittiOutputDir, kittiSampleCounter, configurations)
+
+                # kittiSample = KittiSampleManager(pc_sample1, rootKittiOutputDir, 7481, configurations)
+
+                if not kittiSample.isEmpty:
+                    kittiSampleCounter += 1
+            except KeyboardInterrupt:
+                sys.exit("KeyboardInterrupt")
+            except Exception as e:
+                print("Error occured")
+                print(e)
+
+            # except ValueError:
+            #     print("Value Error")
+
+            toSave += 1
+            f = open("GTASample.txt", "w")
+            f.write(str(toSave))
+            f.close()
+
+            if(kittiSampleCounter == 7481):
+                print("Now testing with " + str(kittiTrainSampleCounter) + " samples on the training set")
 
             #kittiSample1 = KittiSample(pc_sample1, rootKittiOutputDir, configurations.kittiLabelsDir, configurations.kittiVelodyneDir, configurations.kittiViewsDir, configurations.kittiCalibDir, sampleCounter)
 
@@ -92,8 +141,6 @@ def compute(rootDir, rootKittiOutputDir, configurations):
 
             # show kitti dataset resolution front view with the calculated 2d bounding boxes
             #pc_sample1.imageView.show_image_view_with_2d_bounding_boxes(pc_sample1.imageView.dict_2d_bb_of_kitti_image, pc_sample1.imageView.kitti_image, pc_sample1.pc_fv_raw_data.single_category_pcs_list[2].object_ids_list, window_size = 1)
-
-            gtaSampleCounter += 1
 
             #input()
 

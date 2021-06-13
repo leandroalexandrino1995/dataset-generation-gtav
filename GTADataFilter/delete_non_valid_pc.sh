@@ -42,6 +42,6 @@ set -e
 # echo "Done copying"
 # python3 ValidPC.py --rd PointCloudsMesmoASerio_vPAI_NumInv --inv 1
 
-python3 ValidPC.py --rd OQueGostoMesmoEDePCs_vREALISTA --inv 1
+# python3 ValidPC.py --rd OQueGostoMesmoEDePCs_vREALISTA --inv 1
 
-python3 ValidPC.py --rd OQueGostoMesmoEDePCs_vREALISTA_INV --inv 1
+# python3 ValidPC.py --rd OQueGostoMesmoEDePCs_vREALISTA_INV --inv 1

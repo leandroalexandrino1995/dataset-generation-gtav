@@ -8,7 +8,9 @@ import os
 
 # Path to the directory holding the dataset's labels
 rootDir = './label_2/'
-destination_dir = '../../../../kitti/rgb_detections/'
+rootDir = '/media/joao/Elements/Removed/GTAtoKITTI/kitti/data_object_label_2/training/label_2/'
+#destination_dir = '../../../../kitti/rgb_detections/'
+destination_dir = '/home/joao/Desktop/'
 image_dir = './image_2/'
 dest_dir = "../../../../kitti/image_sets/"
 
@@ -55,11 +57,13 @@ filename = "val.txt"
 print("\n\n==== Generating val.txt ====")	
 print("\n\t-> Allows for the selection of samples for the validation dataset split.")
 
-with open(dest_dir + filename, "w") as text_file:
+#with open(dest_dir + filename, "w") as text_file:
+
+with open(destination_dir + filename, "w") as text_file:
 	for pref in list_sample_prefixes:
 		print(pref)
 		text_file.write(pref + "\n")
 
-print("\nOutput file path: " + dest_dir + filename)
+print("\nOutput file path: " + destination_dir + filename)
 print("Finished!")
 

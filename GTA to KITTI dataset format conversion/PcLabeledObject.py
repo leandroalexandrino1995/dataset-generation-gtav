@@ -30,7 +30,8 @@ class PcLabeledObject():
     # each value is a list of projected points [(projx, projy), ...] of the points belonging to a gameobject
     dict_projected_coords_per_obj = {}
 
-    def __init__(self, list_raw_pc, list_raw_detailed_labels, list_raw_projected_points, category_id, category_name = "", debug_mode = False):
+    # def __init__(self, list_raw_pc, list_raw_detailed_labels, list_raw_projected_points, category_id, category_name = "", debug_mode = False):
+    def __init__(self, list_raw_pc, list_raw_detailed_labels, category_id, category_name = "", debug_mode = False):
         '''
         The argument's point cloud data only correspond to a single label/category
         '''
@@ -39,11 +40,13 @@ class PcLabeledObject():
 
         self.object_ids_list = self.getIndividualObjectIds(list_raw_detailed_labels)
 
-        self.dict_of_positions_per_obj, self.dict_of_colors_per_obj, self.dict_projected_coords_per_obj, self.color_per_detailed_label_dict = self.createDictsToSeparateIndividualObjects(list_raw_pc, list_raw_detailed_labels, list_raw_projected_points, self.object_ids_list)
+        # self.dict_of_positions_per_obj, self.dict_of_colors_per_obj, self.dict_projected_coords_per_obj, self.color_per_detailed_label_dict = self.createDictsToSeparateIndividualObjects(list_raw_pc, list_raw_detailed_labels, list_raw_projected_points, self.object_ids_list)
+
+        self.dict_of_positions_per_obj, self.dict_of_colors_per_obj, self.dict_projected_coords_per_obj, self.color_per_detailed_label_dict = self.createDictsToSeparateIndividualObjects(list_raw_pc, list_raw_detailed_labels, self.object_ids_list)
 
     def generateRandomColorsForObjects(self, object_ids_list):
         # create random colors for the different object ids
-        #print(object_ids_list)
+        # print(object_ids_list) # <- tirei aqui
         color_per_object_id_dict = {}     # dicionario onde cada key é um gameobject id, e onde cada valor é uma string a indicar a cor rgb. 
         for i in range(0, len(object_ids_list)):
             # generate random rgb color for the id of the current iteration
@@ -54,7 +57,8 @@ class PcLabeledObject():
         
         return color_per_object_id_dict
 
-    def createDictsToSeparateIndividualObjects(self, list_raw_pc, list_raw_detailed_labels, list_raw_projected_points, object_ids_list):
+    # def createDictsToSeparateIndividualObjects(self, list_raw_pc, list_raw_detailed_labels, list_raw_projected_points, object_ids_list):
+    def createDictsToSeparateIndividualObjects(self, list_raw_pc, list_raw_detailed_labels, object_ids_list):
         '''
         Creates a dictionary with positions + color per vehicle, and a dictionary of the correpondent projected coordinates.
         Arguments:
@@ -86,7 +90,7 @@ class PcLabeledObject():
                                                                     color_per_object_dict[list_raw_detailed_labels[i]][1], 
                                                                     color_per_object_dict[list_raw_detailed_labels[i]][2]))
                         
-            dict_projected_coords_per_obj[list_raw_detailed_labels[i]].append((list_raw_projected_points[i][0], list_raw_projected_points[i][1]))
+            # dict_projected_coords_per_obj[list_raw_detailed_labels[i]].append((list_raw_projected_points[i][0], list_raw_projected_points[i][1]))
 
         return dict_of_positions_per_obj, dict_of_colors_per_obj, dict_projected_coords_per_obj, color_per_object_dict
 

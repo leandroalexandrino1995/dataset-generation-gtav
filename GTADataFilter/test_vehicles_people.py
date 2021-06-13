@@ -2,7 +2,8 @@ import os
 
 def main():
 
-    root_dir='/media/joao/Elements/Removed/TestMePapi'
+    # root_dir='/media/joao/Elements/Removed/TestMePapi'
+    root_dir='/home/joao/Desktop/'
     filename=os.listdir(root_dir)
     file_number=len(filename)
 
@@ -11,7 +12,7 @@ def main():
 
     line_num = []
 
-    path=os.path.join(root_dir, 'LiDAR_PointCloud226/LiDAR_PointCloud_labels.txt')
+    path=os.path.join(root_dir, 'LiDAR_PointCloud56/LiDAR_PointCloud_labels.txt')
 
     with open(path, 'r') as file:
         for k in file.readlines():
@@ -20,7 +21,7 @@ def main():
                 j += 1
             x += 1
 
-    path=os.path.join(root_dir, 'LiDAR_PointCloud226/LiDAR_PointCloud_labelsDetailed.txt')
+    path=os.path.join(root_dir, 'LiDAR_PointCloud56/LiDAR_PointCloud_labelsDetailed.txt')
 
     elements = set()
 
@@ -36,7 +37,7 @@ def main():
     print(len(elements))
     divider = round(len(elements)/4)
 
-    path1=os.path.join(root_dir, 'LiDAR_PointCloud226/LiDAR_PointCloud.ply')
+    path1=os.path.join(root_dir, 'LiDAR_PointCloud56/LiDAR_PointCloud.ply')
 
     with open('/home/joao/Desktop/test2_cars_and_people_only.ply', "w") as file:
         file.write("ply\nformat ascii 1.0\nelement vertex " + str(len(line_num)) + "\nproperty float x\nproperty float y\nproperty float z\nproperty uchar red\nproperty uchar green\nproperty uchar blue\nend_header\n")

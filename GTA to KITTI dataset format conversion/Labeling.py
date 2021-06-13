@@ -9,6 +9,8 @@ import GtaSample
 import pointcloud_utils
 import kitti_util
 import UiConfigParams
+from collections import namedtuple
+
 
 class Labeling:
     '''
@@ -43,6 +45,12 @@ class Labeling:
         # will contain all lines of a label.txt file (of a sample)
         contents_list = []
 
+        distances = {}
+        left = []
+        right = []
+        top = []
+        bottom = []
+
         # iterate through all entities in the label file
         for key in entityInfoDict.keys():
 
@@ -50,24 +58,27 @@ class Labeling:
                 continue
             if configurations.ignorePedestrians and entityInfoDict[key][22] == UiConfigParams.KittiTypes.PEDESTRIAN.value:
                 continue
+            if int(entityInfoDict[key][-4]) == 1:
+                continue
             
             label_line = ""
 
             kitti_height, kitti_width, channels = gtaSample.imageView.getKittiImageDimensions()
-            print("height: " + str(kitti_height))
-            print("width: " + str(kitti_width))
+            # #print("height: " + str(kitti_height))
+            # #print("width: " + str(kitti_width))
 
             # calculate base center position of the entity object, which is used by the kitti dataset to localize objects
             entityBaseCenterPos = (float(entityInfoDict[key][11]), float(entityInfoDict[key][12]), float(entityInfoDict[key][13]) - float(entityInfoDict[key][21])/2)
             lidarPos = (0, 0, 0)
+            distance = pointcloud_utils.calcDistanceBetween3dPoints(lidarPos, entityBaseCenterPos)
             # checkif distance of the entity to the vehicle is less than what is specified in the configurations
             if configurations.filterByDistance[0]:
-                print("Distance: " + str(pointcloud_utils.calcDistanceBetween3dPoints(lidarPos, entityBaseCenterPos)))
-                if pointcloud_utils.calcDistanceBetween3dPoints(lidarPos, entityBaseCenterPos) > configurations.filterByDistance[1]:
+                # #print("Distance: " + str(distance))
+                if distance > configurations.filterByDistance[1]:
                     # ignore entity
                     continue
 
-            print("entityBaseCenterPos", str(entityBaseCenterPos))
+            # #print("entityBaseCenterPos", str(entityBaseCenterPos))
 
             # due to the point cloud is aditionally transformed to be pointing in the direction of x axis instead of the y axis
             orientedEntityPos = gtaSample.pcData.rotatePointAroundZaxis(entityBaseCenterPos, gtaSample.pcData.rotation_amount)
@@ -90,7 +101,72 @@ class Labeling:
 
             xmin, ymin, xmax, ymax = self.calc2DboundingboxCorners(box3d_pts_2d)
 
+            xmin_trunc = 0
+            ymin_trunc = 0
+            xmax_trunc = 0
+            ymax_trunc = 0
+
+            if(round(xmin,2) < 0.00 and abs(round(xmin,2)) > round(gtaSample.imageView.kittiImage.shape[1],2) and abs(round(xmax,2)) > round(gtaSample.imageView.kittiImage.shape[1],2)):
+                xmin_trunc = round(gtaSample.imageView.kittiImage.shape[1],2)
+            elif(round(xmin,2) < 0.00 and abs(round(xmin,2)) > round(gtaSample.imageView.kittiImage.shape[1],2)):
+                xmin_trunc = xmax
+            elif(round(xmin,2) < 0.00):
+                xmin_trunc = 0.00
+            else:
+                xmin_trunc = xmin
+
+            if(round(xmax,2) < round(gtaSample.imageView.kittiImage.shape[1],2) and abs(round(xmin,2)) > round(gtaSample.imageView.kittiImage.shape[1],2)):
+                xmax_trunc = round(gtaSample.imageView.kittiImage.shape[1],2)
+            elif(round(xmax,2) > round(gtaSample.imageView.kittiImage.shape[1],2)):
+                xmax_trunc = round(gtaSample.imageView.kittiImage.shape[1],2)
+            else:
+                xmax_trunc = xmax
+
+            if(round(ymin,2) < 0.00 and abs(round(ymin,2)) > round(gtaSample.imageView.kittiImage.shape[0],2) and abs(round(ymax,2)) > round(gtaSample.imageView.kittiImage.shape[0],2)):
+                ymin_trunc = round(gtaSample.imageView.kittiImage.shape[0],2)
+            elif(round(ymin,2) < 0.00 and abs(round(ymin,2)) > round(gtaSample.imageView.kittiImage.shape[0],2)):
+                ymin_trunc = ymax
+            elif(round(ymin,2) < 0.00):
+                ymin_trunc = 0.00
+            else:
+                ymin_trunc = ymin
+
+            if(round(ymax,2) < round(gtaSample.imageView.kittiImage.shape[0],2) and abs(round(ymin,2)) > round(gtaSample.imageView.kittiImage.shape[0],2)):
+                ymax_trunc = round(gtaSample.imageView.kittiImage.shape[0],2)
+            elif(round(ymax,2) > round(gtaSample.imageView.kittiImage.shape[0],2)):
+                ymax_trunc = round(gtaSample.imageView.kittiImage.shape[0],2)
+            else:
+                ymax_trunc = ymax
+
+            if (round(xmax,2) > round(gtaSample.imageView.kittiImage.shape[1],2) and round(xmin,2) < 0.00 and round(ymin,2) < 0.00 and round(ymax, 2) > round(gtaSample.imageView.kittiImage.shape[0],2)):
+                xmax_trunc = xmin_trunc = ymax_trunc = ymin_trunc = 0.00
+
+            
+
+            # xmin_trunc = xmin if round(xmin,2) > 0.00 else 0.00
+            # xmin_trunc = xmax if abs(round(xmin,2)) > round(gtaSample.imageView.kittiImage.shape[1],2) else xmin_trunc
+            # xmin_trunc = round(gtaSample.imageView.kittiImage.shape[1],2) if abs(round(xmax,2)) > round(gtaSample.imageView.kittiImage.shape[1],2) else xmax
+
+            # xmax_trunc = xmax if round(xmax,2) < round(gtaSample.imageView.kittiImage.shape[1],2) else (round(gtaSample.imageView.kittiImage.shape[1],2))
+            # xmax_trunc = xmax_trunc if abs(round(xmin,2)) < round(gtaSample.imageView.kittiImage.shape[1],2) else (round(gtaSample.imageView.kittiImage.shape[1],2))
+            
+            # ymin_trunc = ymin if round(ymin,2) > 0.00 else 0.00
+            # ymin_trunc = ymax if abs(round(ymin,2)) > round(gtaSample.imageView.kittiImage.shape[0],2) else ymin
+            # ymin_trunc = round(gtaSample.imageView.kittiImage.shape[0],2) if abs(round(ymax,2)) > round(gtaSample.imageView.kittiImage.shape[0],2) else ymax
+
+            # ymax_trunc = ymax if round(ymax,2) < (round(gtaSample.imageView.kittiImage.shape[0],2)) else (round(gtaSample.imageView.kittiImage.shape[0],2))
+            # ymax_trunc = ymax_trunc if abs(round(ymin,2)) < round(gtaSample.imageView.kittiImage.shape[0],2) else (round(gtaSample.imageView.kittiImage.shape[0],2))
+
+            # if (xmin < 0.00 and xmax < 0.00 or xmin > gtaSample.imageView.kittiImage.shape[1] and xmax > gtaSample.imageView.kittiImage.shape[1] or ymin < 0.00 and ymax < 0.00 or ymin > gtaSample.imageView.kittiImage.shape[0] and ymax > gtaSample.imageView.kittiImage.shape[0]):
+            #     truncated = 1.00
+
+            # else:
+            truncated = round((((xmax_trunc-xmin_trunc)*(ymax_trunc-ymin_trunc))/((xmax-xmin)*(ymax-ymin))),2)
+            truncated -= 1
+            truncated = round(abs(truncated),2)
+
             if not self.validateEntityWith2Dboundingbox(xmin, ymin, xmax, ymax, kitti_width, kitti_height):
+                # print("entrou aqui")
                 # ignore entity
                 continue
 
@@ -98,16 +174,17 @@ class Labeling:
             label_line += entityInfoDict[key][22] + " "
             
             # truncated
-            label_line += "0 "
+            label_line += str(round(truncated,2)) + " "
 
             # occluded
-            label_line += "0 "
+            label_line += "0.00 "
 
             # alpha
-            label_line += "0 "
+            label_line += "0.00 "
 
-            # minx, miny, maxx, maxy
-            label_line += str(int(xmin)) + " " + str(int(ymin)) + " " + str(int(xmax)) + " " + str(int(ymax)) + " "
+            # label_line += str(round(xmin,2)) + " " + str(round(ymin,2)) + " " + str(round(xmax,2)) + " " + str(round(ymax,2)) + " / "
+
+            label_line += str(round(xmin_trunc,2)) + " " + str(round(ymin_trunc,2)) + " " + str(round(xmax_trunc,2)) + " " + str(round(ymax_trunc,2)) + " "
 
             label_line += str(bb3d_height) + " " + str(bb3d_width) + " " + str(bb3d_length) + " "
             
@@ -115,15 +192,190 @@ class Labeling:
 
             label_line += str(obj_rot_rads) + " "
 
+            # distances[distance] = len(contents_list)535068240231888
+
+            distances[(len(contents_list))] = distance
+
+            left.append(xmin_trunc)
+            top.append(ymin_trunc)
+            right.append(xmax_trunc)
+            bottom.append(ymax_trunc)
+
+            # left.append(xmin)
+            # top.append(ymin)
+            # right.append(xmax)
+            # bottom.append(ymax)
+
             contents_list.append(label_line)
 
+        distances = dict(sorted(distances.items(), key=lambda item: item[1]))
+
+        # #print("distances: ")
+        # #print(distances)
+
+
+        test = []
+
+        for x in distances.keys():
+            if(len(test) == 0):
+                test.append(contents_list[x])
+            else:
+                # #print("AQUI!!!!")
+                intersection = self.calculateIntesection(left, top, right, bottom, distances.keys(), len(test)+1)
+                #print(intersection)
+                if(int(intersection) == 100 or intersection < 0.00):
+                    # #print("OLA")
+                    # gtaSample.saveListIntoTxtFile(test, dirname, filename)
+                    # sys.exit('Algo errado na parte do truncation')
+                    intersection = 3.00
+                elif(0.00 < intersection < 30.00 ):
+                    intersection = 1.00
+                elif(intersection >= 30.00):
+                    intersection = 2.00
+                line = contents_list[x]
+                split = line.split(" ")
+                line_to_append = ""
+                for k in range(len(split)):
+                    if k != 2:
+                        line_to_append += split[k] + " "
+                    else:
+                        line_to_append += str(intersection) + " "
+                test.append(line_to_append)
+
+        # # if list not empty
+        # if contents_list:          
+        #     gtaSample.saveListIntoTxtFile(contents_list, dirname, filename)
+        # else:
+        #     self.isEmpty = True
+
+            
         # if list not empty
-        if contents_list:          
-            gtaSample.saveListIntoTxtFile(contents_list, dirname, filename)
+        if test:          
+            gtaSample.saveListIntoTxtFile(test, dirname, filename)
         else:
             self.isEmpty = True
 
-            
+    def calculateIntesection(self, left, top, right, bottom, keys, xs):
+
+        left_sorted = []
+        top_sorted = []
+        right_sorted = []
+        bottom_sorted = []
+
+        keys = list(keys)
+        keys = keys[:xs]
+        for x in keys:
+            left_sorted.append(left[x])
+            top_sorted.append(top[x])
+            right_sorted.append(right[x])
+            bottom_sorted.append(bottom[x])
+
+        # #print("Left sorted")
+        # #print(left_sorted)
+
+        # #print("Top sorted")
+        # #print(top_sorted)
+
+        # #print("Right sorted")
+        # #print(right_sorted)
+
+        # #print("Bottom sorted")
+        # #print(bottom_sorted)
+
+        my_left = left_sorted[-1]
+        my_top = top_sorted[-1]
+        my_right = right_sorted[-1]
+        my_bottom = bottom_sorted[-1]
+
+        # rects = [[0] * len(keys)] * len(keys)
+
+        overlapWithMyArea = []
+
+        Rectangle = namedtuple('Rectangle', 'xmin ymin xmax ymax')
+        my_area = Rectangle(my_left, my_top, my_right, my_bottom)
+        # #print("My area 1")
+        # #print(my_area)
+        for l,t,r,b in zip(left_sorted[:-1], top_sorted[:-1], right_sorted[:-1], bottom_sorted[:-1]):
+            rect = Rectangle(l, t, r, b)
+            try:
+                aux_l, aux_t, aux_r, aux_b = self.overlapCorners(rect, my_area)
+                overlapWithMyArea.append([aux_l, aux_t, aux_r, aux_b])
+            except TypeError: 
+                continue
+
+        if (len(overlapWithMyArea) == 0):
+            return 0.00
+
+        # #print(len(overlapWithMyArea))
+
+        overlappingArea = 0
+
+        # #print("My area")
+        # #print(my_area)
+        for x in overlapWithMyArea[:-1]:
+            # #print("HELLO")
+            # # if len(overlapWithMyArea) > 1:
+            # #print("XXXXX")
+            # #print(x)
+            big_area = Rectangle(x[0], x[1], x[2], x[3])
+            for y in overlapWithMyArea[1:]:
+                try:
+                    rect = Rectangle(y[0], y[1], y[2], y[3])
+                    aux_l, aux_t, aux_r, aux_b = self.overlapCorners(big_area, rect)
+                    return -1
+                    # overlapWithMyArea.append([aux_l, aux_t, aux_r, aux_b])
+                except TypeError: 
+                    continue
+            overlappingArea += (self.area(my_area, big_area)/self.area(my_area, my_area))*100
+
+            # else:
+        if len(overlapWithMyArea) == 1:
+            x = overlapWithMyArea[0]
+            # with overlapWithMyArea[0] as x:
+            # #print("YYYYYYY")
+            big_area = Rectangle(x[0], x[1], x[2], x[3])
+            # #print("Big area")
+            # #print(big_area)
+            # #print(self.area(my_area, big_area))
+            try:
+                return (self.area(my_area, big_area)/self.area(my_area, my_area))*100
+            except ZeroDivisionError:
+                return -1
+
+        x = overlapWithMyArea[-1]
+        big_area = Rectangle(x[0], x[1], x[2], x[3])
+
+        try:
+            overlappingArea += (self.area(my_area, big_area)/self.area(my_area, my_area))*100 ##grelada aqui por algum motivo
+            return overlappingArea
+        except ZeroDivisionError:
+            return -1
+
+    def area(self, a, b):  # returns None if rectangles don't intersect
+        dx = min(a.xmax, b.xmax) - max(a.xmin, b.xmin)
+        dy = min(a.ymax, b.ymax) - max(a.ymin, b.ymin)
+        # #print("dx "+str(dx))
+        # #print("dy "+str(dy))
+        if (dx>0) and (dy>0):
+            return dx*dy
+        return 0.00
+
+    def overlapCorners(self, a, b):  # returns None if rectangles don't intersect
+        left = max(a.xmin, b.xmin)
+        top = max(a.ymin, b.ymin)
+        right = min(a.xmax, b.xmax)
+        bottom = min(a.ymax, b.ymax)
+        dx = right - left
+        dy = bottom - top
+        if (dx>=0) and (dy>=0):
+            return left, top, right, bottom
+        # return -1, -1, -1, -1
+
+        # dx = min(a.xmax, b.xmax) - max(a.xmin, b.xmin)
+        # dy = min(a.ymax, b.ymax) - max(a.ymin, b.ymin)
+        # if (dx>=0) and (dy>=0):
+        #     return dx + max(a.xmin, b.xmin)
+        # return dx + max(a.xmin, b.xmin)
 
     def orientEntityPointTowardsXaxis(self, gtaSample, position):
         return gtaSample.pcData.rotatePointAroundZaxis(position, gtaSample.pcData.rotation_amount)
@@ -169,7 +421,7 @@ class Labeling:
             else:
                 obj_rot_rads = float(vehicleInfo[16]) + gtaSample.rawCamRotation - 90 - 180
 
-        print("Vehicle Rotation Final: " + str(obj_rot_rads))
+        # #print("Vehicle Rotation Final: " + str(obj_rot_rads))
 
         obj_rot_rads = pointcloud_utils.degreesToRad(obj_rot_rads)
 
@@ -186,9 +438,9 @@ class Labeling:
         ymin = 0
         xmax = 0
         ymax = 0
-        print(len(box3d_pts_2d))
-        print("POINTS HERE")
-        print(box3d_pts_2d)
+        # #print(len(box3d_pts_2d))
+        # #print("POINTS HERE")
+        # #print(box3d_pts_2d)
         for i in range(0, len(box3d_pts_2d)):
             if i == 0:
                 xmin = box3d_pts_2d[i,0]
@@ -205,14 +457,14 @@ class Labeling:
                     ymin = box3d_pts_2d[i,1]
                 elif box3d_pts_2d[i,1] > ymax:
                     ymax = box3d_pts_2d[i,1]
-        
+
         return xmin, ymin, xmax, ymax
 
     def validateEntityWith2Dboundingbox(self, xmin, ymin, xmax, ymax, img_width, img_height):
-        print("xmin: " + str(xmin))
-        print("xmax: " + str(xmax))
-        print("ymin: " + str(ymin))
-        print("ymax: " + str(ymax))
+        # #print("xmin: " + str(xmin))
+        # #print("xmax: " + str(xmax))
+        # #print("ymin: " + str(ymin))
+        # #print("ymax: " + str(ymax))
 
         if xmin < 0:
             if xmax < 0:

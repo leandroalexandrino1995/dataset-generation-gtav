@@ -17,6 +17,11 @@ class KittiSample:
         self.kittiViewsDir = outputRootDir + outputViewsDir
         self.kittiCalibDir = outputRootDir + outputCalDir
 
+        # self.kittiLabelsDirTesting = outputRootDir + kittiLabelsDirTesting
+        # self.kittiVelodyneDirTesting = outputRootDir + kittiVelodyneDirTesting
+        # self.kittiViewsDirTesting = outputRootDir + kittiViewsDirTesting
+        # self.kittiCalibDirTesting = outputRootDir + kittiCalibDirTesting
+
         self.gtaSample = gtaSample
 
         self.outputKittiLabelFile(sampleCounter, ignore_truncated_bbs = True)
@@ -106,6 +111,11 @@ class KittiSample:
         Path(self.kittiLabelsDir).mkdir(parents=True, exist_ok=True)
         Path(self.kittiCalibDir).mkdir(parents=True, exist_ok=True)
 
+        Path(self.kittiViewsDirTesting).mkdir(parents=True, exist_ok=True)
+        Path(self.kittiVelodyneDirTesting).mkdir(parents=True, exist_ok=True)
+        Path(self.kittiLabelsDirTesting).mkdir(parents=True, exist_ok=True)
+        Path(self.kittiCalibDirTesting).mkdir(parents=True, exist_ok=True)
+
         # save image
         self.gtaSample.imageView.saveImage(self.gtaSample.imageView.kittiImage, self.kittiViewsDir, output_file_name + ".png")
         # save point cloud - the full rotated point cloud
@@ -149,10 +159,10 @@ class KittiSample:
         vert_fov = 2. * np.arctan(np.tan(hor_fov / 2) * img_height / img_width)
         fy = img_height / (2. * np.tan(vert_fov / 2.))
 
-        print("hor_fov: " + str(hor_fov))
-        print("pi: " + str(math.pi))
-        print("Cu: " + str(Cu))
-        print("Cv: " + str(Cv))
+        # print("hor_fov: " + str(hor_fov)) # <- tirei aqui
+        # print("pi: " + str(math.pi)) # <- tirei aqui
+        # print("Cu: " + str(Cu)) # <- tirei aqui
+        # print("Cv: " + str(Cv)) # <- tirei aqui
 
         # only one camera means p1=p2=p3=p0
         #p0_mat = [[fx, 0, Cu, 0],
@@ -261,11 +271,11 @@ class KittiSample:
         # for visualization purposes
         boundingBoxList = []
 
-        print("Number of keys: " + str(vehicleInfoDict.keys()))
+        # print("Number of keys: " + str(vehicleInfoDict.keys())) # <- tirei aqui
 
         for key in vehicleInfoDict.keys():
-            print("::::::::::::::::::::::::::::")
-            print("car: " + str(key))
+            # print("::::::::::::::::::::::::::::") # <- tirei aqui
+            # print("car: " + str(key)) # <- tirei aqui
 
             label_line = ""
 
@@ -308,7 +318,7 @@ class KittiSample:
             # check if the vehicle is in front of the camera if not, ignore it
             #vecObjectForwardDir = np.array([ float(vehicleInfoDict[key][24]), float(vehicleInfoDict[key][25]), float(vehicleInfoDict[key][26])])
             objectPosition = np.array([originalVehiclePoint[0], originalVehiclePoint[1], originalVehiclePoint[2]])
-            print("Object position: " + str(objectPosition))
+            # print("Object position: " + str(objectPosition)) # <- tirei aqui
 
             camPosition = np.zeros(3)
             
@@ -329,7 +339,7 @@ class KittiSample:
             angle = math.acos(dotCamObj) * 180 / math.pi
 
             # print("Dot product: " + str(dotCamObj))
-            print("Angle: " + str(angle))
+            # print("Angle: " + str(angle)) # <- tirei aqui
 
             if angle < 0 or angle > 90:
                 continue
@@ -346,33 +356,33 @@ class KittiSample:
             #### Calculate 3D and 2D bounding boxes through the object's rotation and forward vector, and camera rotation 
             obj_rot_rads = 0
             if float(vehicleInfoDict[key][24]) < 0 and float(vehicleInfoDict[key][25]) < 0: #DONE
-                print("1")
+                # print("1") # <- tirei aqui
                 obj_rot_rads = float(vehicleInfoDict[key][16]) + self.gtaSample.rawCamRotation + 90
             elif float(vehicleInfoDict[key][24]) < 0 and float(vehicleInfoDict[key][25]) > 0: #DONE
-                print("4")
+                # print("4") # <- tirei aqui
                 obj_rot_rads = -float(vehicleInfoDict[key][16]) + self.gtaSample.rawCamRotation - 90
             elif float(vehicleInfoDict[key][24]) > 0 and float(vehicleInfoDict[key][25]) > 0: # almost
                 #if (float(vehicleInfoDict[key][16]) > -45):
                 if float(vehicleInfoDict[key][26]) < 0:
-                    print("5")
+                    # print("5") # <- tirei aqui
                     #obj_rot_rads = float(vehicleInfoDict[key][16]) + self.gtaSample.rawCamRotation
                     obj_rot_rads = -float(vehicleInfoDict[key][16]) + self.gtaSample.rawCamRotation - 90
                 else:
-                    print("6")
+                    # print("6") # <- tirei aqui
                     obj_rot_rads = -float(vehicleInfoDict[key][16]) + self.gtaSample.rawCamRotation - 90
             elif float(vehicleInfoDict[key][24]) > 0 and float(vehicleInfoDict[key][25]) < 0:
                 #if float(vehicleInfoDict[key][16]) >= -45:
                 if float(vehicleInfoDict[key][26]) < 0:
-                    print("7")
+                    # print("7") # <- tirei aqui
                     obj_rot_rads = float(vehicleInfoDict[key][16]) + self.gtaSample.rawCamRotation - 90 + 180
-                    print("ROT: " + str(obj_rot_rads))
+                    # print("ROT: " + str(obj_rot_rads)) # <- tirei aqui
                     #obj_rot_rads = -float(vehicleInfoDict[key][16]) + self.gtaSample.rawCamRotation
-                else:
-                    print("8")
+                else: 
+                    # print("8") # <- tirei aqui
                     obj_rot_rads = float(vehicleInfoDict[key][16]) + self.gtaSample.rawCamRotation - 90 - 180
             #obj_rot_rads = obj_rot_rads - self.gtaSample.rawCamRotation - 90
 
-            print("Vehicle Rotation Final: " + str(obj_rot_rads))
+            # print("Vehicle Rotation Final: " + str(obj_rot_rads)) # <- tirei aqui
 
             obj_rot_rads = self.degreesToRad(obj_rot_rads)
 
@@ -385,14 +395,14 @@ class KittiSample:
             #### Calculate 2D and 3D bounding boxes ####
             box3d_pts_2d, box3d_pts_3d = compute_box_3d(bb3d_length, bb3d_width, bb3d_height, obj_rot_rads, rotatedVehiclePos, self.p0_mat, self.R0, self.C2V)
             
-            print("box3d_pts_2d: " + str(box3d_pts_2d))
-            print("box3d_pts_3d: " + str(box3d_pts_3d))
+            # print("box3d_pts_2d: " + str(box3d_pts_2d)) # <- tirei aqui
+            # print("box3d_pts_3d: " + str(box3d_pts_3d)) # <- tirei aqui
             
             xmin = 0
             ymin = 0
             xmax = 0
             ymax = 0
-            print(len(box3d_pts_2d))
+            # print(len(box3d_pts_2d)) # <- tirei aqui
             for i in range(0, len(box3d_pts_2d)):
                 if i == 0:
                     xmin = box3d_pts_2d[i,0]
@@ -411,10 +421,10 @@ class KittiSample:
                         ymax = box3d_pts_2d[i,1]
 
             
-            print("xmin: " + str(xmin))
-            print("ymin: " + str(ymin))
-            print("xmax: " + str(xmax))
-            print("ymax: " + str(ymax))
+            # print("xmin: " + str(xmin)) # <- tirei aqui
+            # print("ymin: " + str(ymin)) # <- tirei aqui
+            # print("xmax: " + str(xmax)) # <- tirei aqui
+            # print("ymax: " + str(ymax)) # <- tirei aqui
 
             if xmin < 0 and xmax > kitti_width and ymin < 0 and ymax > kitti_height: # ignore object
                 continue
@@ -465,9 +475,9 @@ class KittiSample:
             Checks if the 2d bounding box of the object was cut when the image view was resized to the kitti resolution
         '''
         kitti_height, kitti_width, kitti_channels = self.imageView.get_kitti_image_dimensions()
-        #print("height: " + str(kitti_height))
-        #print("width: " + str(kitti_width))
-        #print("list: " + str(list_coords))
+        # print("height: " + str(kitti_height)) # <- tirei aqui
+        # print("width: " + str(kitti_width)) # <- tirei aqui
+        # print("list: " + str(list_coords)) # <- tirei aqui
 
         if list_coords[0] < 0 or list_coords[1] > kitti_width or list_coords[2] < 0 or list_coords[3] > kitti_height:
             return True 
@@ -481,7 +491,7 @@ class KittiSample:
         
         dict_vehicles_dim = self.gtaSample.loadTxtFileToDict(self.gtaSample.vehiclesInfoFn)
 
-        print(dict_vehicles_dim)
+        # print(dict_vehicles_dim) # <- tirei aqui
         dict_vehicle_projected_center = {}
         for key in self.gtaSample.imageView.dict_2d_bb_of_kitti_image.keys():
             self.gtaSample.dict_2d_bb_NEW[key] = []
@@ -511,11 +521,11 @@ class KittiSample:
             dict_vehicle_projected_center[key].append(int(float(dict_vehicles_dim[str(key)][17])))
             dict_vehicle_projected_center[key].append(int(float(dict_vehicles_dim[str(key)][18])))
 
-            print("New projection: " + str(self.dict_2d_bb_NEW[key][0]) + " " + str(self.dict_2d_bb_NEW[key][1]) + " " + str(self.dict_2d_bb_NEW[key][2]) + " " + str(self.dict_2d_bb_NEW[key][3]))
+        #     print("New projection: " + str(self.dict_2d_bb_NEW[key][0]) + " " + str(self.dict_2d_bb_NEW[key][1]) + " " + str(self.dict_2d_bb_NEW[key][2]) + " " + str(self.dict_2d_bb_NEW[key][3])) # <- tirei aqui
         
-        #print(self.dict_2d_bb_NEW)
-        print("Dictionary projection points: ")
-        print(self.gtaSample.dict_2d_bb_NEW)
+        # print(self.dict_2d_bb_NEW) # <- tirei aqui
+        # print("Dictionary projection points: ") # <- tirei aqui
+        # print(self.gtaSample.dict_2d_bb_NEW) # <- tirei aqui
         
         self.gtaSample.imageView.showViewWith2dBoundingBoxes(self.gtaSample.dict_2d_bb_NEW, self.gtaSample.imageView.gtaImage, self.gtaSample.imageView.dict_2d_bb_of_kitti_image.keys(), window_size = 0.7, object_centers = dict_vehicle_projected_center)
         pass

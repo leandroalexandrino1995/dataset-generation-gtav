@@ -6,22 +6,28 @@ from enum import Enum
 class ConfigParams:
     # kitti dataset directories
     kittiLabelsDir: str = 'data_object_label_2/training/label_2/'
-    kittiVelodyneDir: str = 'data_object_velodyne/training/'
-    kittiViewsDir: str = 'data_object_image_2/training/'
+    kittiVelodyneDir: str = 'data_object_velodyne/training/velodyne/'
+    kittiViewsDir: str = 'data_object_image_2/training/image_2/'
     kittiCalibDir: str = 'data_object_calib/training/calib/'
+
+    kittiLabelsDirTesting: str = 'data_object_label_2/testing/label_2/'
+    kittiVelodyneDirTesting: str = 'data_object_velodyne/testing/velodyne/'
+    kittiViewsDirTesting: str = 'data_object_image_2/testing/image_2/'
+    kittiCalibDirTesting: str = 'data_object_calib/testing/calib/'
 
     # gta inpu samples filenames
     pcPlyFn: str = "LiDAR_PointCloud.ply"
     pcPlyNoiseFn: str = "LiDAR_PointCloud_error.ply"
     pcLabelsFn: str = "LiDAR_PointCloud_labels.txt"
     pcLabelsDetailedFn: str = "LiDAR_PointCloud_labelsDetailed.txt"
-    pcProjectedPointsFn: str = "LiDAR_PointCloud_points.txt"
-    fvImgFn: str = "LiDAR_PointCloud_Camera_Print_Day_0.bmp"
+    # pcProjectedPointsFn: str = "LiDAR_PointCloud_points.txt" -- Não tenho isto, será que é necessário?
+    # fvImgFn: str = "LiDAR_PointCloud_Camera_Print_Day_0.bmp"
+    fvImgFn: str = "LiDAR_PointCloud_Camera_Print_Day_0.jpg"
     # output filenames
     rotationFn: str = "LiDAR_PointCloud_rotation.txt"
     entityInfoFn: str = "LiDAR_PointCloud_vehicles_dims.txt"
     rotatedPointCloudFn: str = "Rotated point cloud.ply"
-    frontviewPointCloudFn: str = "Frontview point cloud.ply"
+    frontviewPointCloudFn: str = "Frontview point cloud.ply" # -- Não tenho isto, será que é necessário
     vehiclesOnlyPointCloudFn: str = "Vehicles point cloud.ply"
     pedestriansOnlyPointCloudFn: str = "Pedestrians point cloud.ply"
     noBackgroundPointsCloudFn: str = "No background point cloud.ply"

@@ -30,15 +30,16 @@ class PcRaw:
     # dict of PCLabeledObject's, where each key is a label/category integer 
     single_category_pcs_list = {}
 
-    def __init__(self, list_raw_pc, list_raw_labels, list_raw_detailed_labels, list_raw_projected_points, camRot = 0, debugMode = False, pcName = ""):
+    # def __init__(self, list_raw_pc, list_raw_labels, list_raw_detailed_labels, list_raw_projected_points, camRot = 0, debugMode = False, pcName = ""):
+    def __init__(self, list_raw_pc, list_raw_labels, list_raw_detailed_labels, camRot = 0, debugMode = False, pcName = ""):
         self.pc_name = pcName
         self.rotation_amount = self.degreesToRad(camRot)  # rotation around z axis, in radians
         self.list_labels = self.getListLabelsWithinPc(list_raw_labels)
-        print("ss: " + str(self.list_labels))
+        # print("ss: " + str(self.list_labels)) # <- tirei aqui
         self.list_raw_pc = list_raw_pc
         self.list_raw_labels = list_raw_labels
         self.list_raw_detailed_labels = list_raw_detailed_labels
-        self.list_raw_projected_points = list_raw_projected_points
+        # self.list_raw_projected_points = list_raw_projected_points
 
         self.list_rotated_raw_pc = self.rotatePcToAlignWithRectCamCoordSystem(self.list_raw_pc, self.rotation_amount)
         
@@ -140,46 +141,49 @@ class PcRaw:
             if point_cloud_labels[i] not in list:
                 list.append(point_cloud_labels[i])
         
-        print(list)
+        # print(list) # <- tirei aqui
         return list
 
     def debug(self, debug_mode):
-        if debug_mode:
-            print("\n==== PointCloud: " + self.pc_name + " ====")
-            print("Rotation amount: " + str(self.rotation_amount) + " rad")
-            print("list_raw_pc:\t\t\t " + str(len(self.list_raw_pc)) + " elements;\t element: " + str(type(self.list_raw_pc[0])) + ";\t element length: " + str(len(self.list_raw_pc[0])) + "; \tinfo: (x, y, z)")
-            print("list_raw_labels:\t\t " + str(len(self.list_raw_labels)) + " elements;\t element: " + str(type(self.list_raw_labels[0])))
-            print("list_raw_detailed_labels:\t " + str(len(self.list_raw_detailed_labels)) + " elements;\t element: " + str(type(self.list_raw_detailed_labels[0])))
-            print("list_raw_projected_points:\t " + str(len(self.list_raw_projected_points)) + " elements;\t element: " + str(type(self.list_raw_projected_points[0])) + ";\t element length: " + str(len(self.list_raw_projected_points[0])) + "; \tinfo: (projX, projY, viewID)")
-            print("list_rotated_raw_pc:\t\t " + str(len(self.list_rotated_raw_pc)) + " elements;\t element: " + str(type(self.list_rotated_raw_pc[0])) + ";\t element length: " + str(len(self.list_rotated_raw_pc[0])) + "; \tinfo: (x, y, z)")
-            print("list_labels:\t\t\t " + str(len(self.list_labels)) + " elements;\t\t element: " + str(type(self.list_labels[0])) + "\t\t printed list: " +  str(self.list_labels))
+        if debug_mode: 
+            # print("\n==== PointCloud: " + self.pc_name + " ====") # <- tirei aqui
+            # print("Rotation amount: " + str(self.rotation_amount) + " rad") # <- tirei aqui
+            # print("list_raw_pc:\t\t\t " + str(len(self.list_raw_pc)) + " elements;\t element: " + str(type(self.list_raw_pc[0])) + ";\t element length: " + str(len(self.list_raw_pc[0])) + "; \tinfo: (x, y, z)") # <- tirei aqui
+            # print("list_raw_labels:\t\t " + str(len(self.list_raw_labels)) + " elements;\t element: " + str(type(self.list_raw_labels[0]))) # <- tirei aqui
+            # print("list_raw_detailed_labels:\t " + str(len(self.list_raw_detailed_labels)) + " elements;\t element: " + str(type(self.list_raw_detailed_labels[0]))) # <- tirei aqui
+            # # print("list_raw_projected_points:\t " + str(len(self.list_raw_projected_points)) + " elements;\t element: " + str(type(self.list_raw_projected_points[0])) + ";\t element length: " + str(len(self.list_raw_projected_points[0])) + "; \tinfo: (projX, projY, viewID)")
+            # print("list_rotated_raw_pc:\t\t " + str(len(self.list_rotated_raw_pc)) + " elements;\t element: " + str(type(self.list_rotated_raw_pc[0])) + ";\t element length: " + str(len(self.list_rotated_raw_pc[0])) + "; \tinfo: (x, y, z)") # <- tirei aqui
+            # print("list_labels:\t\t\t " + str(len(self.list_labels)) + " elements;\t\t element: " + str(type(self.list_labels[0])) + "\t\t printed list: " +  str(self.list_labels)) # <- tirei aqui
+
+            return
 
     def generateSingleCategoryPointCloud(self, category_id, category_name = "", debug_mode = False):
         '''
         Create a point cloud with points belonging to the same label/category.
         '''
-        print("Category id: " + str(category_id))
+        # print("Category id: " + str(category_id)) # <- tirei aqui
         category_exists = False
         for i in range(0, len(self.list_labels)):
-            print("i: " + str(self.list_labels[i]))
+            # print("i: " + str(self.list_labels[i])) # <- tirei aqui
             if self.list_labels[i] == category_id:
                 category_exists = True
 
         if not category_exists:
-            print("ERROR: label " + str(category_id)  + " does not exist!")
+            # print("ERROR: label " + str(category_id)  + " does not exist!") # <- tirei aqui
             return
 
         # get all points with the given label/category
         points = []
         detailed_labels_list = []
-        projected_point_list = []
+        # projected_point_list = []
         for i in range(0, len(self.list_rotated_raw_pc)):
             if self.list_raw_labels[i] == category_id:
                 points.append(self.list_rotated_raw_pc[i])
                 detailed_labels_list.append(self.list_raw_detailed_labels[i])
-                projected_point_list.append(self.list_raw_projected_points[i])
+                # projected_point_list.append(self.list_raw_projected_points[i])
 
-        category_pc = PcLabeledObject(points, detailed_labels_list, projected_point_list, debug_mode, category_id, category_name)
+        # category_pc = PcLabeledObject(points, detailed_labels_list, projected_point_list, debug_mode, category_id, category_name)
+        category_pc = PcLabeledObject(points, detailed_labels_list, debug_mode, category_id, category_name)
 
         self.single_category_pcs_list[category_id] = category_pc
 
@@ -191,13 +195,13 @@ class PcRaw:
         # check if any of the categories exist in the pointcloud
         category_exists = False
         for i in range(0, len(self.list_labels)):
-            print("i: " + str(self.list_labels[i]))
+            # print("i: " + str(self.list_labels[i])) # <- tirei aqui
             for id in category_id_list:
                 if self.list_labels[i] == id:
                     category_exists = True
 
         if not category_exists:
-            print("ERROR: no relevant entities exist! All points belong to the backgroud.")
+            # print("ERROR: no relevant entities exist! All points belong to the backgroud.") # <- tirei aqui
             return None
 
         points = []
