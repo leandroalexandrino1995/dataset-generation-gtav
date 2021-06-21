@@ -58,8 +58,8 @@ class Labeling:
                 continue
             if configurations.ignorePedestrians and entityInfoDict[key][22] == UiConfigParams.KittiTypes.PEDESTRIAN.value:
                 continue
-            if int(entityInfoDict[key][-4]) == 1:
-                continue
+##            if int(entityInfoDict[key][-4]) == 1:
+##                continue
             
             label_line = ""
 

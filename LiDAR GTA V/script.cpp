@@ -95,10 +95,10 @@ std::ofstream playerRotationsStreamW;
 std::ofstream fileOutput;
 // Writing pointcloud points to a text file
 std::ofstream fileOutputPoints;
-// Writing output point cloud with noise to a .ply file
-std::ofstream fileOutputError;
-// Writing pointcloud points with noise to a text file
-std::ofstream fileOutputErrorPoints;
+//// Writing output point cloud with noise to a .ply file
+//std::ofstream fileOutputError;
+//// Writing pointcloud points with noise to a text file
+//std::ofstream fileOutputErrorPoints;
 
 #pragma endregion
 
@@ -121,7 +121,7 @@ bool lidarScanPrep = false;
 // Set when the player starts recording positions for the first time in the current instance of the game.
 bool haveRecordedPositions = false;
 // If the user has already performed (and interrupted) the automatic lidar scanning in the current instance of the game.
-bool hasStartedAndStoppedAutoScan = false;			
+bool hasStartedAndStoppedAutoScan = false;
 
 bool autodriveScan = false;
 
@@ -135,7 +135,7 @@ int positionsCounter = 0;
 int singleScanCounter = 0;
 int multiScanCounter = 0;
 // Number of lidar scans completed
-int lidarScansCounter = 0;	
+int lidarScansCounter = 0;
 // number of lines of the file with the route positions
 int positionsFileNumberOfLines = -1;
 
@@ -159,7 +159,7 @@ float lidarAndCamHeight = 1.73;
 float secondsBetweenRecordings = 2;
 int secondsToWaitAfterTeleport = 5;
 // in order for the beginning of the next scan to not be sudden
-int secondsBeforeStartingLidarScan = 2;				
+int secondsBeforeStartingLidarScan = 2;
 
 #pragma endregion
 
@@ -189,9 +189,9 @@ int indexRowCounter = 0;
 double xValue;
 
 std::vector<std::vector<Vector3>> pointsMatrix;
-std::vector<std::vector<Vector3>> pointsWithErrorMatrix;
+//std::vector<std::vector<Vector3>> pointsWithErrorMatrix;
 std::vector<std::vector<ProjectedPointData>> pointsProjectedMatrix;
-std::vector<std::vector<ProjectedPointData>> pointsProjectedWithErrorMatrix;
+//std::vector<std::vector<ProjectedPointData>> pointsProjectedWithErrorMatrix;
 
 std::vector<std::vector<int>> labels;
 std::vector<std::vector<int>> labelsDetailed;
@@ -200,7 +200,7 @@ std::vector<int> pointsPerVerticalStep;
 
 // store information of different vehicles detected by the lidar
 // Values per vehicle: "Entity | Hash | Vector3 minDimCoords | Projected minDimCoords | Vector3 maxDimCoords | Projected minDimCoords | Posx | Posy | Posz | Rotx | Roty | Rotz | Vehicle center Projection Coords"
-std::map<Entity, std::string> vehiclesLookupTable;	
+std::map<Entity, std::string> vehiclesLookupTable;
 
 //std::map<Entity, std::string> pedestriansLookupTable;
 
@@ -210,14 +210,21 @@ std::map<Entity, std::string> vehiclesLookupTable;
 
 
 float vehicleDensityMultiplierLimit = 2;
-float currentVehicleDenstiyMultiplier = 0;
+float currentVehicleDenstiyMultiplier = 2;
 float pedDensityMultiplierLimit = 2;
-float currentPedDensityMultiplier = 0;
+float currentPedDensityMultiplier = 2;
 
 bool configsSet = false;
 bool isInvincible = true;
 float vehicleSpawnDistance = 30; // meters
 
+int allTruncated = 1;
+
+int moved = 0;
+
+float heightAboveGround;
+
+int ignoring = 0;
 
 #pragma endregion
 
@@ -237,8 +244,13 @@ void SetInitialConfigs()
 
 void SetPedAndVehicleDensityMultipliers()
 {
+
 	VEHICLE::SET_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME(currentVehicleDenstiyMultiplier);
+	VEHICLE::SET_RANDOM_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME(currentVehicleDenstiyMultiplier);
+	VEHICLE::SET_PARKED_VEHICLE_DENSITY_MULTIPLIER_THIS_FRAME(currentVehicleDenstiyMultiplier);
+
 	PED::SET_PED_DENSITY_MULTIPLIER_THIS_FRAME(currentPedDensityMultiplier);
+	PED::SET_SCENARIO_PED_DENSITY_MULTIPLIER_THIS_FRAME(currentPedDensityMultiplier, currentPedDensityMultiplier);
 }
 
 void ScriptMain()
@@ -264,7 +276,7 @@ void ScriptMain()
 			SetInitialConfigs();
 			configsSet = true;
 		}
-		
+
 		// required per frame
 		SetPedAndVehicleDensityMultipliers();
 
@@ -279,7 +291,7 @@ void ScriptMain()
 		{
 			if (currentPedDensityMultiplier >= 0.1)
 				currentPedDensityMultiplier -= 0.1;
-			
+
 			if (currentVehicleDenstiyMultiplier >= 0.1)
 				currentVehicleDenstiyMultiplier -= 0.1;
 
@@ -346,7 +358,7 @@ void ScriptMain()
 					notificationOnLeft("Player position recording has finished!");
 				}
 			}
-			catch (std::exception &e)
+			catch (std::exception& e)
 			{
 				notificationOnLeft(e.what());
 				return;
@@ -370,7 +382,7 @@ void ScriptMain()
 				positionsDBFileW << std::to_string(playerCurrentPos.x) + " " + std::to_string(playerCurrentPos.y) + " " + std::to_string(playerCurrentPos.z) + "\n";
 
 				float rotx, roty, rotz;
-				
+
 				Vector3 rot = ENTITY::GET_ENTITY_ROTATION(PLAYER::PLAYER_PED_ID(), 0);
 
 				rotx = rot.x;
@@ -428,7 +440,7 @@ void ScriptMain()
 						notificationOnLeft("Lidar scanning was stopped before the end of the file!\n\nTo continue from the latest position, press F5 when ready!");
 					}
 				}
-				catch (std::exception &e)
+				catch (std::exception& e)
 				{
 					notificationOnLeft(e.what());
 					return;
@@ -505,24 +517,41 @@ void ScriptMain()
 			double elapsedTime = std::chrono::duration_cast<std::chrono::seconds>(currentTime - start_timer).count();
 			// check if the car is stuck in traffic
 			playerMoved = (playerStartingPos.x != playerCurrentPos.x) || (playerStartingPos.y != playerCurrentPos.y) || (playerStartingPos.z != playerCurrentPos.z);
+			//if (!playerMoved) {
+			//	moved++;
+			//}
+			//else {
+			//	moved = 0;
+			//}
+		
 
-			if (elapsedTime > 7 && multiScanCounter < 200 && !scanLive && !takeSnap && playerMoved)
+			/*if (elapsedTime > 5 && multiScanCounter < 200 && !scanLive && !takeSnap && playerMoved)*/
+			if (elapsedTime > 5 && !scanLive && !takeSnap)
 			{
 				scanLive = true;
 				takeSnap = true;
 				multiScanCounter++;
-			}
-			else if (!playerMoved) {
 				start_timer = currentTime;
+				//if(moved >= 20){	// if car stuck in traffic for 20*5=100 secs all cars scramble
+				//	INPUT ip;
+
+				//	ip.type = INPUT_KEYBOARD;
+				//	ip.ki.wVk = 0x4D;
+				//	ip.ki.dwFlags = KEYEVENTF_KEYUP;
+				//	SendInput(1, &ip, sizeof(INPUT));
+				//}
 			}
-			else if (multiScanCounter >= 200) {
-				autodriveScan = false;
-			}
+			//else if (!playerMoved) {
+			//	start_timer = currentTime;
+			//}
+			//else if (multiScanCounter >= 200) {
+			//	autodriveScan = false;
+			//}
 		}
 
 		// output stream for writing log information into the log.txt file
 		std::ofstream log;
-		
+
 		if (takeSnap)
 		{
 			// reset
@@ -536,8 +565,8 @@ void ScriptMain()
 			{
 				double parameters[6];
 				int rangeRay;
-				int errorDist;
-				double error;
+				//int errorDist;
+				//double error;
 				std::string filename;		// name for the point cloud file (.ply) and it's parent directory
 				std::string ignore;
 				std::ifstream inputFile;
@@ -555,8 +584,8 @@ void ScriptMain()
 				}
 				inputFile >> ignore >> ignore >> rangeRay;
 				inputFile >> ignore >> ignore >> filename;
-				inputFile >> ignore >> ignore >> error;
-				inputFile >> ignore >> ignore >> errorDist;
+				//inputFile >> ignore >> ignore >> error;
+				//inputFile >> ignore >> ignore >> errorDist;
 
 				inputFile.close();
 
@@ -576,7 +605,7 @@ void ScriptMain()
 
 				log.close();
 			}
-			catch (std::exception &e)
+			catch (std::exception& e)
 			{
 				notificationOnLeft(e.what());
 				log << e.what();
@@ -616,7 +645,8 @@ void ScriptMain()
 			// start lidar process
 			std::string newfolder = "LiDAR GTA V/" + filename + std::to_string(lidarScansCounter);
 
-			lidar(parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], rangeRay, newfolder + "/" + filename, error, errorDist, log);
+			ignoring = lidar(parameters[0], parameters[1], parameters[2], parameters[3], parameters[4], parameters[5], rangeRay, newfolder + "/" + filename, error, errorDist, log);
+			//notificationOnLeft("Ignoring after Lidar: " + std::to_string(ignoring));
 
 			if (countFrames == nWorkloadFrames)
 			{
@@ -646,7 +676,7 @@ int getNumberOfOutputDir(std::string parentDir, std::string parentDirname, std::
 {
 	int dirMaxNum = 0;		// biggest "LiDAR_PointCloudN" number 
 	std::string path = parentDir;
-	for (const auto &entry : fs::directory_iterator(path))
+	for (const auto& entry : fs::directory_iterator(path))
 	{
 		log << "iter dir: " + entry.path().string() + "\n";
 		if (entry.path().string().find(parentDirname) != std::string::npos) {
@@ -661,7 +691,12 @@ int getNumberOfOutputDir(std::string parentDir, std::string parentDirname, std::
 
 		//std::cout << entry.path() << std::endl;
 	}
-	dirMaxNum += 1;
+
+	//notificationOnLeft("Ignoring in getNumberOfOutputDir: " + std::to_string(ignoring));
+
+	dirMaxNum = ignoring == 1 ? dirMaxNum : dirMaxNum + 1;
+
+	/*dirMaxNum += 1;*/
 	return dirMaxNum;
 }
 
@@ -725,7 +760,7 @@ double getError(std::vector<double>& dist, std::vector<double>& error, double r)
 		return 0;
 	}
 	fact = (abs(r) - dist[x - 1]) / (dist[x] - dist[x - 1]);
-	return (1 - fact) * error[x - 1] + (fact)* error[x];
+	return (1 - fact) * error[x - 1] + (fact)*error[x];
 }
 
 void introduceError(Vector3* xyzError, double x, double y, double z, double error, int errorType, int range, std::vector<double>& dist_vector, std::vector<double>& error_vector)
@@ -879,7 +914,7 @@ int SaveScreenshot(std::string filename, ULONG uQuality = 100)
 	BITMAPINFO bmiCapture = { sizeof(BITMAPINFOHEADER), w, -h, 1, nBPP, BI_RGB, 0, 0, 0, 0, 0, };
 
 	// create a container and take the screenshot
-	HBITMAP hbmCapture = CreateDIBSection(dc, &bmiCapture, DIB_PAL_COLORS, (LPVOID*)& lpCapture, NULL, 0);
+	HBITMAP hbmCapture = CreateDIBSection(dc, &bmiCapture, DIB_PAL_COLORS, (LPVOID*)&lpCapture, NULL, 0);
 
 	// failed to take it
 	if (!hbmCapture) {
@@ -939,7 +974,7 @@ void SetLidarHeight()
 // this function is only called once at the beginning of each lidar scan
 void SetupGameForLidarScan(double horiFovMin, double horiFovMax, double vertFovMin, double vertFovMax, double horiStep, double vertStep, std::string filePath, std::ofstream& log)
 {
-	readErrorFile(dist_vector, error_vector);
+	//readErrorFile(dist_vector, error_vector);
 
 	//centerDot = ENTITY::GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(PLAYER::PLAYER_PED_ID(), 0, 0, raycastHeightParam - halfCharacterHeight);
 	centerDot = ENTITY::GET_OFFSET_FROM_ENTITY_IN_WORLD_COORDS(PLAYER::PLAYER_PED_ID(), 0, 0, 0);
@@ -949,7 +984,7 @@ void SetupGameForLidarScan(double horiFovMin, double horiFovMax, double vertFovM
 	LogLidarHeight(filePath + lidarFrameLogFilePathDebug, "SetupGameForLidarScan", centerDot);
 
 	LogPlayerAlphaValue(filePath + lidarFrameLogFilePathDebug, "SetupGameForLidarScan");
-	
+
 	ENTITY::SET_ENTITY_ALPHA(PLAYER::PLAYER_PED_ID(), 0, true);			// make player invisible; alphaLevel between 0 and 255
 
 	GRAPHICS::GET_SCREEN_RESOLUTION(&resolutionX, &resolutionY);
@@ -962,7 +997,7 @@ void SetupGameForLidarScan(double horiFovMin, double horiFovMax, double vertFovM
 
 	panoramicCam = CAM::CREATE_CAM("DEFAULT_SCRIPTED_CAMERA", 1);
 	LogRenderingCameraSettings(filePath + lidarFrameLogFilePathDebug, "SetupGameForLidarScan", panoramicCam);
-	LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "SetupGameForLidarScan", "New Cam height pos", std::to_string(centerDot.x) + " " + std::to_string(centerDot.y) + " " + std::to_string(centerDot.z));
+	//LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "SetupGameForLidarScan", "New Cam height pos", std::to_string(centerDot.x) + " " + std::to_string(centerDot.y) + " " + std::to_string(centerDot.z));
 
 	CAM::SET_CAM_FOV(panoramicCam, 50);
 	CAM::SET_CAM_ROT(panoramicCam, playerCurRot.x, playerCurRot.y, playerCurRot.z, 1);
@@ -971,7 +1006,7 @@ void SetupGameForLidarScan(double horiFovMin, double horiFovMax, double vertFovM
 	if (PED::IS_PED_IN_ANY_VEHICLE(PLAYER::PLAYER_PED_ID(), true))
 	{
 		Vector3 rightVec;
-		rightVec.x = 1; 
+		rightVec.x = 1;
 		rightVec.y = 0;
 		rightVec.z = 0;
 		rightVec = rotate_point_around_z_axis(rightVec, playerCurRot.z);
@@ -995,10 +1030,10 @@ void SetupGameForLidarScan(double horiFovMin, double horiFovMax, double vertFovM
 	}
 
 	CAM::SET_CAM_COORD(panoramicCam, centerDot.x, centerDot.y, centerDot.z);
-	
+
 	//CAM::ATTACH_CAM_TO_ENTITY(panoramicCam, PLAYER::PLAYER_PED_ID(), 0, 0, raycastHeightParam - halfCharacterHeight, 1);
 	//CAM::ATTACH_CAM_TO_ENTITY(panoramicCam, PLAYER::PLAYER_PED_ID(), 0, 0, GetLidarHeight(), 1);
-	
+
 	CAM::RENDER_SCRIPT_CAMS(1, 0, 0, 1, 0);
 	CAM::SET_CAM_ACTIVE(panoramicCam, true);
 	WAIT(50);
@@ -1009,11 +1044,11 @@ void SetupGameForLidarScan(double horiFovMin, double horiFovMax, double vertFovM
 
 	fileOutput.open(filePath + ".ply");
 	fileOutputPoints.open(filePath + "_points.txt");
-	fileOutputError.open(filePath + "_error.ply");
-	fileOutputErrorPoints.open(filePath + "_error.txt");
+	//fileOutputError.open(filePath + "_heigt.ply");
+	//fileOutputErrorPoints.open(filePath + "_error.txt");
 	labelsFileStreamW.open(filePath + "_labels.txt");					// open labels file
 	labelsDetailedFileStreamW.open(filePath + "_labelsDetailed.txt");	// open labels file
-	 
+
 	//Disable HUD and Radar
 	UI::DISPLAY_HUD(false);
 	UI::DISPLAY_RADAR(false);
@@ -1028,9 +1063,9 @@ void SetupGameForLidarScan(double horiFovMin, double horiFovMax, double vertFovM
 
 	// It's a vector containing no_of_rows vectors containing no_of_cols points.
 	pointsMatrix = std::vector<std::vector<Vector3>>(no_of_rows + 1, std::vector<Vector3>(no_of_cols + 1));
-	pointsWithErrorMatrix = std::vector<std::vector<Vector3>>(no_of_rows + 1, std::vector<Vector3>(no_of_cols + 1));
+	//pointsWithErrorMatrix = std::vector<std::vector<Vector3>>(no_of_rows + 1, std::vector<Vector3>(no_of_cols + 1));
 	pointsProjectedMatrix = std::vector<std::vector<ProjectedPointData>>(no_of_rows + 1, std::vector<ProjectedPointData>(no_of_cols + 1));
-	pointsProjectedWithErrorMatrix = std::vector<std::vector<ProjectedPointData>>(no_of_rows + 1, std::vector<ProjectedPointData>(no_of_cols + 1));
+	//pointsProjectedWithErrorMatrix = std::vector<std::vector<ProjectedPointData>>(no_of_rows + 1, std::vector<ProjectedPointData>(no_of_cols + 1));
 
 	labels = std::vector<std::vector<int>>(no_of_rows + 1, std::vector<int>(no_of_cols + 1));
 	labelsDetailed = std::vector<std::vector<int>>(no_of_rows + 1, std::vector<int>(no_of_cols + 1));
@@ -1039,7 +1074,7 @@ void SetupGameForLidarScan(double horiFovMin, double horiFovMax, double vertFovM
 
 	// initialize loop values to their initial ones
 	xValue = vertFovMin;
-	
+
 	countFrames = 0;
 	indexRowCounter = 0;
 
@@ -1058,16 +1093,16 @@ float distanceBetween3dPoints(Vector3 p1, Vector3 p2)
 
 float dotProduct3D(Vector3 v1, Vector3 v2)
 {
-	return v1.x*v2.x + v1.y*v2.y + v1.z*v2.z;
+	return v1.x * v2.x + v1.y * v2.y + v1.z * v2.z;
 }
 
 // returns a vector with: minCornerPos, maxCornerPos
 std::vector<Vector3> GetBestMinMaxCoords(std::vector<Vector3> corners, Vector3 vehiclePos, int& truncated, Vector3 canonicalMinCoords, Vector3 canonicalMaxCoords, std::string filePath)
 {
-	truncated = 0;	// if the vehicle is totally or partly inside the image
+	//truncated = 0;	// if the vehicle is totally or partly inside the image
 
 	float trueDiagonal = distanceBetween3dPoints(canonicalMinCoords, canonicalMaxCoords);
-	LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "GetBestMinMaxCoords", "True Diagonal length", std::to_string(trueDiagonal));
+	//LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "GetBestMinMaxCoords", "True Diagonal length", std::to_string(trueDiagonal));
 
 	Vector3 c1;
 	c1.x = 0;
@@ -1087,7 +1122,7 @@ std::vector<Vector3> GetBestMinMaxCoords(std::vector<Vector3> corners, Vector3 v
 	for (int i = 0; i < 8; i++)
 	{
 		Vector3 corner1 = corners[i];
-		
+
 		for (int j = 0; j < 8; j++)
 		{
 			// ignore the same corner as corner1
@@ -1108,10 +1143,10 @@ std::vector<Vector3> GetBestMinMaxCoords(std::vector<Vector3> corners, Vector3 v
 			// before calculating the area, the coordinates need to be evaluated in order to form the min and max 2D points from the alctual min and max coordinates
 			float tmp = 0;
 
-			LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "GetBestMinMaxCoords", "Iteration", "[" + std::to_string(i) + "][" + std::to_string(j) + "]");
-			LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "GetBestMinMaxCoords", "Min Projected Coords", "" + std::to_string(minxProjected) + ", " + std::to_string(minyProjected) + "");
-			LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "GetBestMinMaxCoords", "Max Projected Coords", "" + std::to_string(maxxProjected) + ", " + std::to_string(maxyProjected) + "");
-			//LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "GetBestMinMaxCoords", "Area before", std::to_string(abs((int)(minxProjected*1.5*resolutionX) - (int)(maxxProjected * 1.5*resolutionX)) * abs((int)(minyProjected*1.5*resolutionY) - (int)(maxyProjected * 1.5*resolutionY))));
+			//LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "GetBestMinMaxCoords", "Iteration", "[" + std::to_string(i) + "][" + std::to_string(j) + "]");
+			//LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "GetBestMinMaxCoords", "Min Projected Coords", "" + std::to_string(minxProjected) + ", " + std::to_string(minyProjected) + "");
+			//LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "GetBestMinMaxCoords", "Max Projected Coords", "" + std::to_string(maxxProjected) + ", " + std::to_string(maxyProjected) + "");
+			////LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "GetBestMinMaxCoords", "Area before", std::to_string(abs((int)(minxProjected*1.5*resolutionX) - (int)(maxxProjected * 1.5*resolutionX)) * abs((int)(minyProjected*1.5*resolutionY) - (int)(maxyProjected * 1.5*resolutionY))));
 
 			/*if (minxProjected > maxxProjected)
 			{
@@ -1128,18 +1163,18 @@ std::vector<Vector3> GetBestMinMaxCoords(std::vector<Vector3> corners, Vector3 v
 			}*/
 
 			// area with projected points
-			int tmpAreaProjected = abs((int)(minxProjected*1.5*resolutionX) - (int)(maxxProjected * 1.5*resolutionX)) * abs((int)(minyProjected*1.5*resolutionY) - (int)(maxyProjected * 1.5*resolutionY));
+			int tmpAreaProjected = abs((int)(minxProjected * 1.5 * resolutionX) - (int)(maxxProjected * 1.5 * resolutionX)) * abs((int)(minyProjected * 1.5 * resolutionY) - (int)(maxyProjected * 1.5 * resolutionY));
 
-			
-			LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "GetBestMinMaxCoords", "Corner1", std::to_string(corner1.x) + " " + std::to_string(corner1.y) + " " + std::to_string(corner1.z));
-			LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "GetBestMinMaxCoords", "Corner2", std::to_string(corner2.x) + " " + std::to_string(corner2.y) + " " + std::to_string(corner2.z));
 
-			LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "GetBestMinMaxCoords", "Area", std::to_string(tmpAreaProjected));
+			//LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "GetBestMinMaxCoords", "Corner1", std::to_string(corner1.x) + " " + std::to_string(corner1.y) + " " + std::to_string(corner1.z));
+			//LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "GetBestMinMaxCoords", "Corner2", std::to_string(corner2.x) + " " + std::to_string(corner2.y) + " " + std::to_string(corner2.z));
+
+			//LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "GetBestMinMaxCoords", "Area", std::to_string(tmpAreaProjected));
 
 			// determine if the area is bigger than the previously bigger area, and if the point is projected inside the image view
 			if (tmpAreaProjected > areaProjected &&
-				(minxProjected*1.5*resolutionX) > 0 && (minyProjected*1.5*resolutionY) > 0 &&
-				(maxxProjected*1.5*resolutionX) > 0 && (maxyProjected*1.5*resolutionY) > 0)
+				(minxProjected * 1.5 * resolutionX) > 0 && (minyProjected * 1.5 * resolutionY) > 0 &&
+				(maxxProjected * 1.5 * resolutionX) > 0 && (maxyProjected * 1.5 * resolutionY) > 0)
 			{
 				// ensure that the two 3d corners dont lie on the same plane in any of the axis (using the box dimesions), because the croners that give the biggest 2d bounding box can lie on the same plane, which is not desirable
 				// 1º) verify, and correct when not, if the min coords are less than the max coords
@@ -1163,13 +1198,13 @@ std::vector<Vector3> GetBestMinMaxCoords(std::vector<Vector3> corners, Vector3 v
 					corner2.z = tmp2;
 				}
 
-				LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "GetBestMinMaxCoords", "Corner1 Reordered", std::to_string(corner1.x) + " " + std::to_string(corner1.y) + " " + std::to_string(corner1.z));
-				LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "GetBestMinMaxCoords", "Corner2 Reordered", std::to_string(corner2.x) + " " + std::to_string(corner2.y) + " " + std::to_string(corner2.z));
+				//LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "GetBestMinMaxCoords", "Corner1 Reordered", std::to_string(corner1.x) + " " + std::to_string(corner1.y) + " " + std::to_string(corner1.z));
+				//LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "GetBestMinMaxCoords", "Corner2 Reordered", std::to_string(corner2.x) + " " + std::to_string(corner2.y) + " " + std::to_string(corner2.z));
 
 				// 2º) verify if the corners lie on the same plane by calculating the diagonal and compare it to the diagonal of the 3d box surround the car
 				float testDiagonal = distanceBetween3dPoints(corner1, corner2);
 
-				LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "GetBestMinMaxCoords", "Test Diagonal", std::to_string(testDiagonal));
+				//LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "GetBestMinMaxCoords", "Test Diagonal", std::to_string(testDiagonal));
 
 				if (testDiagonal == trueDiagonal)	// means that all coordinates of the corners lie on different planes
 				{
@@ -1186,8 +1221,10 @@ std::vector<Vector3> GetBestMinMaxCoords(std::vector<Vector3> corners, Vector3 v
 					// skip
 				}
 			}
-			else
-				truncated = 1;
+			else {
+				//truncated = 1;
+			}
+				
 		}
 	}
 
@@ -1201,7 +1238,7 @@ Vector3 FindCenterCoordsOf3Dbox(std::vector<Vector3> corners, Vector3 vehiclePos
 	center.x = 0;
 	center.y = 0;
 	center.z = 0;
-	
+
 	// find X average
 	for (int i = 0; i < 8; i++)
 	{
@@ -1226,18 +1263,20 @@ Vector3 FindCenterCoordsOf3Dbox(std::vector<Vector3> corners, Vector3 vehiclePos
 	return center;
 }
 
-void RegisterVehicleInformation(Entity vehicleHandle, std::string entityType, std::string filePath)
+int RegisterVehicleInformation(Entity vehicleHandle, std::string entityType, std::string filePath)
 {
-	if (entityType.compare("Vehicle") != 0 && entityType.compare("HumansAnimals") != 0)		// the entity is not a vehiclen nor a pedestrian
-		return;
+	if (entityType.compare("Vehicle") != 0 && entityType.compare("HumansAnimals") != 0 && entityType.compare("GameProp") != 0)		// the entity is not a vehiclen nor a pedestrian -> still may be important for occluded levels
+		return -1;
 
 	// check if vehicle is already in the dictionary, if so, ignore the point
 	if (vehiclesLookupTable.count(vehicleHandle) == 1) // if there is already the same vehicle in the dictionary
-		return;
+		return -1;
 	//else if (entityType.compare("HumansAnimals") != 0 && pedestriansLookupTable.count(vehicleHandle) == 1) // if there is already the same pedestrian in the dictionary
 	//	return;
 
-	LogVehicleRotations(filePath + lidarFrameLogFilePathDebug, "RegisterVehicleInformation", vehicleHandle);
+	//if (entityType.compare("Vehicle") == 0 || entityType.compare("HumansAnimals") == 0) {
+	//	LogVehicleRotations(filePath + lidarFrameLogFilePathDebug, "RegisterVehicleInformation", vehicleHandle);
+	//}
 
 	// stop the vehicle from moving
 	ENTITY::SET_ENTITY_VELOCITY(vehicleHandle, 0, 0, 0);
@@ -1267,14 +1306,16 @@ void RegisterVehicleInformation(Entity vehicleHandle, std::string entityType, st
 
 	std::vector<Vector3> corners = { minCoords, maxCoords, minXminYmaxZCoords, maxXminYminZCoords, maxXminYmaxZCoords, minXmaxYmaxZCoords, maxXmaxYminZCoords, minXmaxYminZCoords };
 
-	LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "RegisterVehicleInformation", "minCoords", std::to_string(minCoords.x) + " " + std::to_string(minCoords.y) + " " + std::to_string(minCoords.z));
-	LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "RegisterVehicleInformation", "maxCoords", std::to_string(maxCoords.x) + " " + std::to_string(maxCoords.y) + " " + std::to_string(maxCoords.z));
-	LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "RegisterVehicleInformation", "minXminYmaxZCoords", std::to_string(minXminYmaxZCoords.x) + " " + std::to_string(minXminYmaxZCoords.y) + " " + std::to_string(minXminYmaxZCoords.z));
-	LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "RegisterVehicleInformation", "maxXminYminZCoords", std::to_string(maxXminYminZCoords.x) + " " + std::to_string(maxXminYminZCoords.y) + " " + std::to_string(maxXminYminZCoords.z));
-	LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "RegisterVehicleInformation", "maxXminYmaxZCoords", std::to_string(maxXminYmaxZCoords.x) + " " + std::to_string(maxXminYmaxZCoords.y) + " " + std::to_string(maxXminYmaxZCoords.z));
-	LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "RegisterVehicleInformation", "minXmaxYmaxZCoords", std::to_string(minXmaxYmaxZCoords.x) + " " + std::to_string(minXmaxYmaxZCoords.y) + " " + std::to_string(minXmaxYmaxZCoords.z));
-	LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "RegisterVehicleInformation", "maxXmaxYminZCoords", std::to_string(maxXmaxYminZCoords.x) + " " + std::to_string(maxXmaxYminZCoords.y) + " " + std::to_string(maxXmaxYminZCoords.z));
-	LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "RegisterVehicleInformation", "minXmaxYminZCoords", std::to_string(minXmaxYminZCoords.x) + " " + std::to_string(minXmaxYminZCoords.y) + " " + std::to_string(minXmaxYminZCoords.z));
+	if (entityType.compare("Vehicle") == 0 || entityType.compare("HumansAnimals") == 0) {
+		//LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "RegisterVehicleInformation", "minCoords", std::to_string(minCoords.x) + " " + std::to_string(minCoords.y) + " " + std::to_string(minCoords.z));
+		//LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "RegisterVehicleInformation", "maxCoords", std::to_string(maxCoords.x) + " " + std::to_string(maxCoords.y) + " " + std::to_string(maxCoords.z));
+		//LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "RegisterVehicleInformation", "minXminYmaxZCoords", std::to_string(minXminYmaxZCoords.x) + " " + std::to_string(minXminYmaxZCoords.y) + " " + std::to_string(minXminYmaxZCoords.z));
+		//LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "RegisterVehicleInformation", "maxXminYminZCoords", std::to_string(maxXminYminZCoords.x) + " " + std::to_string(maxXminYminZCoords.y) + " " + std::to_string(maxXminYminZCoords.z));
+		//LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "RegisterVehicleInformation", "maxXminYmaxZCoords", std::to_string(maxXminYmaxZCoords.x) + " " + std::to_string(maxXminYmaxZCoords.y) + " " + std::to_string(maxXminYmaxZCoords.z));
+		//LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "RegisterVehicleInformation", "minXmaxYmaxZCoords", std::to_string(minXmaxYmaxZCoords.x) + " " + std::to_string(minXmaxYmaxZCoords.y) + " " + std::to_string(minXmaxYmaxZCoords.z));
+		//LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "RegisterVehicleInformation", "maxXmaxYminZCoords", std::to_string(maxXmaxYminZCoords.x) + " " + std::to_string(maxXmaxYminZCoords.y) + " " + std::to_string(maxXmaxYminZCoords.z));
+		//LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "RegisterVehicleInformation", "minXmaxYminZCoords", std::to_string(minXmaxYminZCoords.x) + " " + std::to_string(minXmaxYminZCoords.y) + " " + std::to_string(minXmaxYminZCoords.z));
+	}
 
 	// vehicle 3d box dimensions
 	float vehicleDimWidth = maxCoords.x - minCoords.x;
@@ -1291,7 +1332,7 @@ void RegisterVehicleInformation(Entity vehicleHandle, std::string entityType, st
 	else
 		vehicleAngleZ = 180 - vehicleRotation.z;
 
-	/*if ((vehicleLocalForwardVector.x > 0 && vehicleLocalForwardVector.y < 0 && vehicleLocalForwardVector.z < 0) || 
+	/*if ((vehicleLocalForwardVector.x > 0 && vehicleLocalForwardVector.y < 0 && vehicleLocalForwardVector.z < 0) ||
 		(vehicleLocalForwardVector.x > 0 && vehicleLocalForwardVector.y < 0 && vehicleLocalForwardVector.z > 0) ||
 		(vehicleLocalForwardVector.x < 0 && vehicleLocalForwardVector.y < 0 && vehicleLocalForwardVector.z > 0))
 		vehicleAngleZ = 180 - vehicleRotation.z;
@@ -1300,7 +1341,9 @@ void RegisterVehicleInformation(Entity vehicleHandle, std::string entityType, st
 
 	Vector3 camRotation = CAM::GET_CAM_ROT(panoramicCam, 1);
 
-	LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "RegisterVehicleInformation", "Camera rotation Z", std::to_string(camRotation.z));
+	if (entityType.compare("Vehicle") == 0 || entityType.compare("HumansAnimals") == 0) {
+		//LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "RegisterVehicleInformation", "Camera rotation Z", std::to_string(camRotation.z));
+	}
 
 	// convert [-180, 0] angles to their positive counterparts
 	if (camRotation.z < 0)
@@ -1331,7 +1374,7 @@ void RegisterVehicleInformation(Entity vehicleHandle, std::string entityType, st
 		if (vehicleLocalForwardVector.z < 0)
 			vehicleAngleZ = -vehicleAngleZ - camRotation.z - 90;
 		else
-			vehicleAngleZ = -vehicleAngleZ - camRotation.z -90;// Not good
+			vehicleAngleZ = -vehicleAngleZ - camRotation.z - 90;// Not good
 	}
 	else if (vehicleLocalForwardVector.x > 0 && vehicleLocalForwardVector.y < 0)
 	{
@@ -1342,81 +1385,138 @@ void RegisterVehicleInformation(Entity vehicleHandle, std::string entityType, st
 			vehicleAngleZ = vehicleAngleZ - camRotation.z;		// GOOD
 	}
 
+	int truncated = 1;
 
-	LogVehicleCornersCoords(filePath + lidarFrameLogFilePathDebug, "RegisterVehicleInformation", vehicleHandle, vehicleAngleZ, corners, centerDot, vehiclePos, resolutionX, resolutionY, true);
+	for (int i = 0; i < 8; i++)
+	{
+		float projectedX;
+		float projectedY;
+		GRAPHICS::_WORLD3D_TO_SCREEN2D(corners[i].x + vehiclePos.x, corners[i].y + vehiclePos.y, corners[i].z + vehiclePos.z, &projectedX, &projectedY);
 
-	// find center of the box surrounding the veiculo through arithmetic average of the corners coordinates
-	// Note: the vehicles position is not based on it's center 
-	Vector3 vehicleTrueCenter = FindCenterCoordsOf3Dbox(corners, vehiclePos);	// position in world space
+		int projectedXres = (int)(projectedX * resolutionX * 1.5);
+		int projectedYres = (int)(projectedY * resolutionY * 1.5);
 
-	// obtain min 3D corner and max 3D corner of the 3d box surrounding the car
-	int truncated = 0;
-	std::vector<Vector3> minMaxVectors = GetBestMinMaxCoords(corners, vehiclePos, truncated, minCoords, maxCoords, filePath);
+		if (projectedXres >= 0 || projectedYres >= 0) {
+			truncated = 0;
+			break;
+		}
+	}
 
-	float minxProjected;
-	float minyProjected;
-	GRAPHICS::_WORLD3D_TO_SCREEN2D(minMaxVectors[0].x + vehiclePos.x, minMaxVectors[0].y + vehiclePos.y, minMaxVectors[0].z + vehiclePos.z, &minxProjected, &minyProjected);
+	//truncated = 
+	if (truncated == 0) {
+		
+		if (entityType.compare("Vehicle") == 0 || entityType.compare("HumansAnimals") == 0) {
+			LogVehicleCornersCoords(filePath + lidarFrameLogFilePathDebug, "RegisterVehicleInformation", vehicleHandle, vehicleAngleZ, corners, centerDot, vehiclePos, resolutionX, resolutionY, true);
+		}
 
-	float maxxProjected;
-	float maxyProjected;
-	GRAPHICS::_WORLD3D_TO_SCREEN2D(minMaxVectors[1].x + vehiclePos.x, minMaxVectors[1].y + vehiclePos.y, minMaxVectors[1].z + vehiclePos.z, &maxxProjected, &maxyProjected);
+		// find center of the box surrounding the veiculo through arithmetic average of the corners coordinates
+		// Note: the vehicles position is not based on it's center 
+		Vector3 vehicleTrueCenter = FindCenterCoordsOf3Dbox(corners, vehiclePos);	// position in world space
 
-	// vehicle center projection coordinates
-	float minxVehicleProjected;
-	float minyVehicleProjected;
-	//GRAPHICS::_WORLD3D_TO_SCREEN2D(vehiclePos.x, vehiclePos.y, vehiclePos.z, &minxVehicleProjected, &minyVehicleProjected);
-	GRAPHICS::_WORLD3D_TO_SCREEN2D(vehicleTrueCenter.x, vehicleTrueCenter.y, vehicleTrueCenter.z, &minxVehicleProjected, &minyVehicleProjected);
+		// obtain min 3D corner and max 3D corner of the 3d box surrounding the car
+		//int truncated = 0;
+		std::vector<Vector3> minMaxVectors = GetBestMinMaxCoords(corners, vehiclePos, truncated, minCoords, maxCoords, filePath);
+
+		float minxProjected;
+		float minyProjected;
+		GRAPHICS::_WORLD3D_TO_SCREEN2D(minMaxVectors[0].x + vehiclePos.x, minMaxVectors[0].y + vehiclePos.y, minMaxVectors[0].z + vehiclePos.z, &minxProjected, &minyProjected);
+
+		float maxxProjected;
+		float maxyProjected;
+		GRAPHICS::_WORLD3D_TO_SCREEN2D(minMaxVectors[1].x + vehiclePos.x, minMaxVectors[1].y + vehiclePos.y, minMaxVectors[1].z + vehiclePos.z, &maxxProjected, &maxyProjected);
+
+		// vehicle center projection coordinates
+		float minxVehicleProjected;
+		float minyVehicleProjected;
+		//GRAPHICS::_WORLD3D_TO_SCREEN2D(vehiclePos.x, vehiclePos.y, vehiclePos.z, &minxVehicleProjected, &minyVehicleProjected);
+		GRAPHICS::_WORLD3D_TO_SCREEN2D(vehicleTrueCenter.x, vehicleTrueCenter.y, vehicleTrueCenter.z, &minxVehicleProjected, &minyVehicleProjected);
+
+
+		// Values per vehicle: "Entity 
+		//						| Hash 
+		//						| minCornerX | minCornerY | minCornerZ | projMinCornerX | projMinCornerX 
+		//						| maxCornerX | maxCornerY | maxCornerZ | projMaxCornerX | projMaxCornerY 
+		//						| Posx | Posy | Posz | Rotx | Roty | Rotz 
+		//						| projCenterX | projCenterY 
+		//						| dimX | dimY | dimZ
+		//						| objectType | truncated | 
+		//						| forwardVecX | forwardVecY | forwardVecZ"
+
+		//if (truncated == 0) {
+		if (entityType.compare("Vehicle") == 0)
+		{
+			heightAboveGround = ENTITY::GET_ENTITY_HEIGHT_ABOVE_GROUND(vehicleHandle);
+
+			// insert vehicle into the dictionary
+			vehiclesLookupTable[vehicleHandle] = std::to_string(vehicleHandle) + " " + std::to_string(vehicleHash) + " "
+				+ std::to_string(minMaxVectors[0].x) + " " + std::to_string(minMaxVectors[0].y) + " " + std::to_string(minMaxVectors[0].z) + " "
+				+ std::to_string((int)(minxProjected * resolutionX * 1.5)) + " " + std::to_string((int)(minyProjected * resolutionY * 1.5)) + " "
+				+ std::to_string(minMaxVectors[1].x) + " " + std::to_string(minMaxVectors[1].y) + " " + std::to_string(minMaxVectors[1].z) + " "
+				+ std::to_string((int)(maxxProjected * resolutionX * 1.5)) + " " + std::to_string((int)(maxyProjected * resolutionY * 1.5)) + " "
+				+ std::to_string(vehicleTrueCenter.x - centerDot.x) + " " + std::to_string(vehicleTrueCenter.y - centerDot.y) + " " + std::to_string(vehicleTrueCenter.z - centerDot.z) + " "
+				+ std::to_string(vehicleRotation.x) + " " + std::to_string(vehicleRotation.y) + " " + std::to_string(vehicleRotation.z) + " "
+				+ std::to_string((int)(minxVehicleProjected * resolutionX * 1.5)) + " " + std::to_string((int)(minyVehicleProjected * resolutionY * 1.5)) + " "
+				+ std::to_string(vehicleDimWidth) + " " + std::to_string(vehicleDimHeight) + " " + std::to_string(vehicleDimLength) + " "
+				+ "Car" + " " + std::to_string(truncated) + " "
+				+ std::to_string(vehicleLocalForwardVector.x) + " " + std::to_string(vehicleLocalForwardVector.y) + " " + std::to_string(vehicleLocalForwardVector.z)
+				//;
+				+ " " + std::to_string(heightAboveGround)
+				;
+
+		}
+		else if (entityType.compare("HumansAnimals") == 0)
+		{
+			heightAboveGround = ENTITY::GET_ENTITY_HEIGHT_ABOVE_GROUND(vehicleHandle);
+
+			// insert vehicle into the dictionary
+			vehiclesLookupTable[vehicleHandle] = std::to_string(vehicleHandle) + " " + std::to_string(vehicleHash) + " "
+				+ std::to_string(minMaxVectors[0].x) + " " + std::to_string(minMaxVectors[0].y) + " " + std::to_string(minMaxVectors[0].z) + " "
+				+ std::to_string((int)(minxProjected * resolutionX * 1.5)) + " " + std::to_string((int)(minyProjected * resolutionY * 1.5)) + " "
+				+ std::to_string(minMaxVectors[1].x) + " " + std::to_string(minMaxVectors[1].y) + " " + std::to_string(minMaxVectors[1].z) + " "
+				+ std::to_string((int)(maxxProjected * resolutionX * 1.5)) + " " + std::to_string((int)(maxyProjected * resolutionY * 1.5)) + " "
+				+ std::to_string(vehicleTrueCenter.x - centerDot.x) + " " + std::to_string(vehicleTrueCenter.y - centerDot.y) + " " + std::to_string(vehicleTrueCenter.z - centerDot.z) + " "
+				+ std::to_string(vehicleRotation.x) + " " + std::to_string(vehicleRotation.y) + " " + std::to_string(vehicleRotation.z) + " "
+				+ std::to_string((int)(minxVehicleProjected * resolutionX * 1.5)) + " " + std::to_string((int)(minyVehicleProjected * resolutionY * 1.5)) + " "
+				+ std::to_string(vehicleDimWidth) + " " + std::to_string(vehicleDimHeight) + " " + std::to_string(vehicleDimLength) + " "
+				+ "Pedestrian" + " " + std::to_string(truncated) + " "
+				+ std::to_string(vehicleLocalForwardVector.x) + " " + std::to_string(vehicleLocalForwardVector.y) + " " + std::to_string(vehicleLocalForwardVector.z)
+				//;
+				+ " "
+				+ std::to_string(heightAboveGround);
+		}
+		else if (entityType.compare("GameProp") == 0)
+		{
+			// insert vehicle into the dictionary
+			vehiclesLookupTable[vehicleHandle] = std::to_string(vehicleHandle) + " " + std::to_string(vehicleHash) + " "
+				+ std::to_string(minMaxVectors[0].x) + " " + std::to_string(minMaxVectors[0].y) + " " + std::to_string(minMaxVectors[0].z) + " "
+				+ std::to_string((int)(minxProjected * resolutionX * 1.5)) + " " + std::to_string((int)(minyProjected * resolutionY * 1.5)) + " "
+				+ std::to_string(minMaxVectors[1].x) + " " + std::to_string(minMaxVectors[1].y) + " " + std::to_string(minMaxVectors[1].z) + " "
+				+ std::to_string((int)(maxxProjected * resolutionX * 1.5)) + " " + std::to_string((int)(maxyProjected * resolutionY * 1.5)) + " "
+				+ std::to_string(vehicleTrueCenter.x - centerDot.x) + " " + std::to_string(vehicleTrueCenter.y - centerDot.y) + " " + std::to_string(vehicleTrueCenter.z - centerDot.z) + " "
+				+ std::to_string(vehicleRotation.x) + " " + std::to_string(vehicleRotation.y) + " " + std::to_string(vehicleRotation.z) + " "
+				+ std::to_string((int)(minxVehicleProjected * resolutionX * 1.5)) + " " + std::to_string((int)(minyVehicleProjected * resolutionY * 1.5)) + " "
+				+ std::to_string(vehicleDimWidth) + " " + std::to_string(vehicleDimHeight) + " " + std::to_string(vehicleDimLength) + " "
+				+ "DontCare" + " " + std::to_string(truncated) + " "
+				+ std::to_string(vehicleLocalForwardVector.x) + " " + std::to_string(vehicleLocalForwardVector.y) + " " + std::to_string(vehicleLocalForwardVector.z)
+				//;
+				+ " "
+				+ std::to_string(0.00);
+		}
+		//}
+	}
+
 	
-	// Values per vehicle: "Entity 
-	//						| Hash 
-	//						| minCornerX | minCornerY | minCornerZ | projMinCornerX | projMinCornerX 
-	//						| maxCornerX | maxCornerY | maxCornerZ | projMaxCornerX | projMaxCornerY 
-	//						| Posx | Posy | Posz | Rotx | Roty | Rotz 
-	//						| projCenterX | projCenterY 
-	//						| dimX | dimY | dimZ
-	//						| objectType | truncated | 
-	//						| forwardVecX | forwardVecY | forwardVecZ"
-
-	if (entityType.compare("Vehicle") == 0)
-	{
-		// insert vehicle into the dictionary
-		vehiclesLookupTable[vehicleHandle] = std::to_string(vehicleHandle) + " " + std::to_string(vehicleHash) + " "
-			+ std::to_string(minMaxVectors[0].x) + " " + std::to_string(minMaxVectors[0].y) + " " + std::to_string(minMaxVectors[0].z) + " "
-			+ std::to_string((int)(minxProjected * resolutionX * 1.5)) + " " + std::to_string((int)(minyProjected * resolutionY * 1.5)) + " "
-			+ std::to_string(minMaxVectors[1].x) + " " + std::to_string(minMaxVectors[1].y) + " " + std::to_string(minMaxVectors[1].z) + " "
-			+ std::to_string((int)(maxxProjected * resolutionX * 1.5)) + " " + std::to_string((int)(maxyProjected * resolutionY * 1.5)) + " "
-			+ std::to_string(vehicleTrueCenter.x - centerDot.x) + " " + std::to_string(vehicleTrueCenter.y - centerDot.y) + " " + std::to_string(vehicleTrueCenter.z - centerDot.z) + " "
-			+ std::to_string(vehicleRotation.x) + " " + std::to_string(vehicleRotation.y) + " " + std::to_string(vehicleRotation.z) + " "
-			+ std::to_string((int)(minxVehicleProjected * resolutionX * 1.5)) + " " + std::to_string((int)(minyVehicleProjected * resolutionY * 1.5)) + " "
-			+ std::to_string(vehicleDimWidth) + " " + std::to_string(vehicleDimHeight) + " " + std::to_string(vehicleDimLength) + " "
-			+ "Car" + " " + std::to_string(truncated) + " "
-			+ std::to_string(vehicleLocalForwardVector.x) + " " + std::to_string(vehicleLocalForwardVector.y) + " " + std::to_string(vehicleLocalForwardVector.z);
-
-	}
-	else if (entityType.compare("HumansAnimals") == 0)
-	{
-		// insert vehicle into the dictionary
-		vehiclesLookupTable[vehicleHandle] = std::to_string(vehicleHandle) + " " + std::to_string(vehicleHash) + " "
-			+ std::to_string(minMaxVectors[0].x) + " " + std::to_string(minMaxVectors[0].y) + " " + std::to_string(minMaxVectors[0].z) + " "
-			+ std::to_string((int)(minxProjected * resolutionX * 1.5)) + " " + std::to_string((int)(minyProjected * resolutionY * 1.5)) + " "
-			+ std::to_string(minMaxVectors[1].x) + " " + std::to_string(minMaxVectors[1].y) + " " + std::to_string(minMaxVectors[1].z) + " "
-			+ std::to_string((int)(maxxProjected * resolutionX * 1.5)) + " " + std::to_string((int)(maxyProjected * resolutionY * 1.5)) + " "
-			+ std::to_string(vehicleTrueCenter.x - centerDot.x) + " " + std::to_string(vehicleTrueCenter.y - centerDot.y) + " " + std::to_string(vehicleTrueCenter.z - centerDot.z) + " "
-			+ std::to_string(vehicleRotation.x) + " " + std::to_string(vehicleRotation.y) + " " + std::to_string(vehicleRotation.z) + " "
-			+ std::to_string((int)(minxVehicleProjected * resolutionX * 1.5)) + " " + std::to_string((int)(minyVehicleProjected * resolutionY * 1.5)) + " "
-			+ std::to_string(vehicleDimWidth) + " " + std::to_string(vehicleDimHeight) + " " + std::to_string(vehicleDimLength) + " "
-			+ "Pedestrian" + " " + std::to_string(truncated) + " "
-			+ std::to_string(vehicleLocalForwardVector.x) + " " + std::to_string(vehicleLocalForwardVector.y) + " " + std::to_string(vehicleLocalForwardVector.z);
-	}
 	//+ std::to_string(vehiclePos.x - centerDot.x) + " " + std::to_string(vehiclePos.y - centerDot.y) + " " + std::to_string(vehiclePos.z - centerDot.z) + " "
+
+	return truncated;
 }
 
 
 Vector3 rotate_point_around_z_axis(Vector3 point, float angle)
 {
 	Vector3 rotatedPoint;
-	rotatedPoint.x = point.x*cos(angle*(PI / 180)) - point.y*sin(angle*(PI / 180));
-	rotatedPoint.y = point.x*sin(angle*(PI / 180)) + point.y*cos(angle*(PI / 180));
+	rotatedPoint.x = point.x * cos(angle * (PI / 180)) - point.y * sin(angle * (PI / 180));
+	rotatedPoint.y = point.x * sin(angle * (PI / 180)) + point.y * cos(angle * (PI / 180));
 	rotatedPoint.z = point.z;
 
 	return rotatedPoint;
@@ -1426,8 +1526,8 @@ Vector3 rotate_point_around_x_axis(Vector3 point, float angle)
 {
 	Vector3 rotatedPoint;
 	rotatedPoint.x = point.x;
-	rotatedPoint.y = point.y*cos(angle*(PI / 180)) - point.z*sin(angle*(PI / 180));
-	rotatedPoint.z = point.y*sin(angle*(PI / 180)) + point.z*cos(angle*(PI / 180));
+	rotatedPoint.y = point.y * cos(angle * (PI / 180)) - point.z * sin(angle * (PI / 180));
+	rotatedPoint.z = point.y * sin(angle * (PI / 180)) + point.z * cos(angle * (PI / 180));
 
 	return rotatedPoint;
 }
@@ -1435,18 +1535,20 @@ Vector3 rotate_point_around_x_axis(Vector3 point, float angle)
 Vector3 rotate_point_around_y_axis(Vector3 point, float angle)
 {
 	Vector3 rotatedPoint;
-	rotatedPoint.x = point.x*cos(angle*(PI / 180)) + point.z*sin(angle*(PI / 180));
+	rotatedPoint.x = point.x * cos(angle * (PI / 180)) + point.z * sin(angle * (PI / 180));
 	rotatedPoint.y = point.y;
-	rotatedPoint.z = -point.x*sin(angle*(PI / 180)) + point.z*cos(angle*(PI / 180));
+	rotatedPoint.z = -point.x * sin(angle * (PI / 180)) + point.z * cos(angle * (PI / 180));
 
 	return rotatedPoint;
 }
 
-void lidar(double horiFovMin, double horiFovMax, double vertFovMin, double vertFovMax, double horiStep, double vertStep, int range, std::string filePath, double error, int errorDist, std::ofstream& log)
+int lidar(double horiFovMin, double horiFovMax, double vertFovMin, double vertFovMax, double horiStep, double vertStep, int range, std::string filePath, double error, int errorDist, std::ofstream& log)
 {
 	countFrames++;
 
 	int maxIndexRowCounterForThisFrame = std::ceil(nVerticalSteps / nWorkloadFrames) * countFrames;
+
+	int truncatedObject;
 
 	if (countFrames == nWorkloadFrames)
 	{
@@ -1472,16 +1574,22 @@ void lidar(double horiFovMin, double horiFovMax, double vertFovMin, double vertF
 			{
 				ray result = angleOffsetRaycast(x, z, range);
 
-				RegisterVehicleInformation(result.hitEntityHandle, result.entityTypeName, filePath);
+				truncatedObject = RegisterVehicleInformation(result.hitEntityHandle, result.entityTypeName, filePath);
+
+				heightAboveGround = ENTITY::GET_ENTITY_HEIGHT_ABOVE_GROUND(result.hitEntityHandle);
+
+				if (truncatedObject == 0 && (result.entityTypeName.compare("Vehicle") == 0 || result.entityTypeName.compare("HumansAnimals") == 0) && allTruncated == 1) {
+					allTruncated = 0;
+				}
 
 				// register the distance between the collision point and the ray origin
 				pointsMatrix[indexRowCounter][indexColumnCounter] = result.hitCoordinates;
 
 				// introduce error to the points
-				Vector3 xyzError;
-				introduceError(&xyzError, result.hitCoordinates.x - centerDot.x, result.hitCoordinates.y - centerDot.y, result.hitCoordinates.z - centerDot.z, error, errorDist, range, dist_vector, error_vector);
+				//Vector3 xyzError;
+				//introduceError(&xyzError, result.hitCoordinates.x - centerDot.x, result.hitCoordinates.y - centerDot.y, result.hitCoordinates.z - centerDot.z, error, errorDist, range, dist_vector, error_vector);
 
-				pointsWithErrorMatrix[indexRowCounter][indexColumnCounter] = xyzError;
+				//pointsWithErrorMatrix[indexRowCounter][indexColumnCounter] = xyzError;
 
 				// gameobject type (Background, vehicle, pedestrian, props)
 				labels[indexRowCounter][indexColumnCounter] = result.entityTypeId;
@@ -1490,7 +1598,7 @@ void lidar(double horiFovMin, double horiFovMax, double vertFovMin, double vertF
 				labelsDetailed[indexRowCounter][indexColumnCounter] = result.hitEntityHandle;
 
 				// a raycast only outputs a point when it hits something
-				pointsPerVerticalStep[indexRowCounter]++; 
+				pointsPerVerticalStep[indexRowCounter]++;
 
 				indexColumnCounter++;
 			}
@@ -1502,17 +1610,21 @@ void lidar(double horiFovMin, double horiFovMax, double vertFovMin, double vertF
 		std::ofstream sampleVehicleDimFileW;
 		sampleVehicleDimFileW.open(filePath + vehiclesInSampleFilename);
 
-		for (const auto &myPair : vehiclesLookupTable) {
+		for (const auto& myPair : vehiclesLookupTable) {
 			sampleVehicleDimFileW << myPair.second + "\n";
 		}
 
 		sampleVehicleDimFileW.close();
 
 		log.close();
+
+		notificationOnLeft("AllTruncated: " + std::to_string(allTruncated));
+
+		return allTruncated;
 	}
-	catch (std::exception &e)
+	catch (std::exception& e)
 	{
-		return;
+		return allTruncated;
 	}
 }
 
@@ -1522,58 +1634,60 @@ void TakeCameraImages(std::string filePath)
 
 	Vector3 playerCurRot = ENTITY::GET_ENTITY_ROTATION(PLAYER::PLAYER_PED_ID(), 0);
 
+	////Set clear weather
+	//GAMEPLAY::CLEAR_OVERRIDE_WEATHER();
+	//GAMEPLAY::SET_OVERRIDE_WEATHER("CLEAR");
+
+	////Set time to midnight
+	//TIME::SET_CLOCK_TIME(0, 0, 0);
+	//WAIT(100);
+
+	////Rotate camera 360 degrees and take screenshots
+	//for (int i = 0; i < 3; i++) {
+	//	cam_rotz = playerCurRot.z + i * 120;
+
+	//	CAM::SET_CAM_ROT(panoramicCam, 0, 0, cam_rotz, 1);
+	//	WAIT(200);
+
+	//	//Save screenshot
+	//	std::string filename = filePath + "_Camera_Print_Night_" + std::to_string(i) + ".bmp";
+	//	SaveScreenshot(filename.c_str());
+	//}
+
+	////Set clear weather
+	//GAMEPLAY::CLEAR_OVERRIDE_WEATHER();
+	//GAMEPLAY::SET_OVERRIDE_WEATHER("OVERCAST");
+
+	////Set time to noon
+	//TIME::SET_CLOCK_TIME(12, 0, 0);
+
+	////Rotate camera 360 degrees and take screenshots
+	//WAIT(100);
+	//for (int i = 0; i < 3; i++) {
+	//	//Rotate camera
+	//	cam_rotz = playerCurRot.z + i * 120;
+	//	CAM::SET_CAM_ROT(panoramicCam, 0, 0, cam_rotz, 1);
+	//	WAIT(200);
+
+	//	//Save screenshot
+	//	std::string filename = filePath + "_Camera_Print_Cloudy_" + std::to_string(i) + ".bmp";
+	//	SaveScreenshot(filename.c_str());
+	//}
+
 	//Set clear weather
 	GAMEPLAY::CLEAR_OVERRIDE_WEATHER();
 	GAMEPLAY::SET_OVERRIDE_WEATHER("CLEAR");
 
-	//Set time to midnight
-	TIME::SET_CLOCK_TIME(0, 0, 0);
-	WAIT(100);
-
-	//Rotate camera 360 degrees and take screenshots
-	for (int i = 0; i < 3; i++) {
-		cam_rotz = playerCurRot.z + i * 120;
-
-		CAM::SET_CAM_ROT(panoramicCam, 0, 0, cam_rotz, 1);
-		WAIT(200);
-
-		//Save screenshot
-		std::string filename = filePath + "_Camera_Print_Night_" + std::to_string(i) + ".bmp";
-		SaveScreenshot(filename.c_str());
-	}
-
-	//Set clear weather
-	GAMEPLAY::CLEAR_OVERRIDE_WEATHER();
-	GAMEPLAY::SET_OVERRIDE_WEATHER("OVERCAST");
-
-	//Set time to noon
 	TIME::SET_CLOCK_TIME(12, 0, 0);
 
-	//Rotate camera 360 degrees and take screenshots
-	WAIT(100);
-	for (int i = 0; i < 3; i++) {
+	for (int i = 0; i < 1; i++) {
 		//Rotate camera
 		cam_rotz = playerCurRot.z + i * 120;
 		CAM::SET_CAM_ROT(panoramicCam, 0, 0, cam_rotz, 1);
 		WAIT(200);
 
 		//Save screenshot
-		std::string filename = filePath + "_Camera_Print_Cloudy_" + std::to_string(i) + ".bmp";
-		SaveScreenshot(filename.c_str());
-	}
-
-	//Set clear weather
-	GAMEPLAY::CLEAR_OVERRIDE_WEATHER();
-	GAMEPLAY::SET_OVERRIDE_WEATHER("CLEAR");
-
-	for (int i = 0; i < 3; i++) {
-		//Rotate camera
-		cam_rotz = playerCurRot.z + i * 120;
-		CAM::SET_CAM_ROT(panoramicCam, 0, 0, cam_rotz, 1);
-		WAIT(200);
-
-		//Save screenshot
-		std::string filename = filePath + "_Camera_Print_Day_" + std::to_string(i) + ".bmp";
+		std::string filename = filePath + "_Camera_Print_Day_" + std::to_string(i) + ".jpg";
 		SaveScreenshot(filename.c_str());
 
 		// Iterate through every point, determine if it's present in the current FoV, if it is project it onto the picture and assign the screenX, screenY and FoV id to the respective point
@@ -1589,7 +1703,7 @@ void TakeCameraImages(std::string filePath)
 				GRAPHICS::_WORLD3D_TO_SCREEN2D(voxel.x, voxel.y, voxel.z, &x2d, &y2d);
 
 				//Get screen coordinates of 3D voxels w/ error
-				GRAPHICS::_WORLD3D_TO_SCREEN2D(pointsWithErrorMatrix[t][j].x + centerDot.x, pointsWithErrorMatrix[t][j].y + centerDot.y, pointsWithErrorMatrix[t][j].z + centerDot.z, &err_x2d, &err_y2d);
+				//GRAPHICS::_WORLD3D_TO_SCREEN2D(pointsWithErrorMatrix[t][j].x + centerDot.x, pointsWithErrorMatrix[t][j].y + centerDot.y, pointsWithErrorMatrix[t][j].z + centerDot.z, &err_x2d, &err_y2d);
 
 				if (x2d != -1 || y2d != -1) {
 					if (pointsProjectedMatrix[t][j].stateSet == false) // if point hasn't already been colored
@@ -1601,15 +1715,15 @@ void TakeCameraImages(std::string filePath)
 					}
 				}
 
-				if (err_x2d > -1 || err_y2d > -1) {
-					if (pointsProjectedWithErrorMatrix[t][j].stateSet == false) // if point hasn't already been colored
-					{
-						pointsProjectedWithErrorMatrix[t][j].stateSet = true;
-						pointsProjectedWithErrorMatrix[t][j].pictureId = i;
-						pointsProjectedWithErrorMatrix[t][j].screenCoordX = int(err_x2d * resolutionX * 1.5);
-						pointsProjectedWithErrorMatrix[t][j].screenCoordY = int(err_y2d * resolutionY * 1.5);
-					}
-				}
+				//if (err_x2d > -1 || err_y2d > -1) {
+				//	if (pointsProjectedWithErrorMatrix[t][j].stateSet == false) // if point hasn't already been colored
+				//	{
+				//		pointsProjectedWithErrorMatrix[t][j].stateSet = true;
+				//		pointsProjectedWithErrorMatrix[t][j].pictureId = i;
+				//		pointsProjectedWithErrorMatrix[t][j].screenCoordX = int(err_x2d * resolutionX * 1.5);
+				//		pointsProjectedWithErrorMatrix[t][j].screenCoordY = int(err_y2d * resolutionY * 1.5);
+				//	}
+				//}
 			}
 		}
 		//log << "Done.\n";
@@ -1618,64 +1732,72 @@ void TakeCameraImages(std::string filePath)
 
 void PostLidarScanProcessing(std::string filePath)
 {
-	TakeCameraImages(filePath);
 
-	std::string fileOutputLines = "";
-	std::string fileOutputPointsLines = "";
-	std::string fileOutputErrorLines = "";
-	std::string fileOutputErrorPointsLines = "";
-	std::string labelsFileStreamWLines = "";
-	std::string labelsDetailedFileStreamWLines = "";
+	//notificationOnLeft("Ignoring in PostLidarScanProcessing: " + std::to_string(ignoring));
 
-	int countValidPoints = 0;
-	// fill LiDAR_PointCloud_error.txt
-	for (int i = 0; i < nVerticalSteps; i++)
-	{
-		for (int j = 0; j < pointsPerVerticalStep[i]; j++)
+	if (ignoring == 0) {
+
+		TakeCameraImages(filePath);
+
+		std::string fileOutputLines = "";
+		std::string fileOutputPointsLines = "";
+		//std::string fileOutputErrorLines = "";
+		//std::string fileOutputErrorPointsLines = "";
+		std::string labelsFileStreamWLines = "";
+		std::string labelsDetailedFileStreamWLines = "";
+
+		int countValidPoints = 0;
+		// fill LiDAR_PointCloud_error.txt
+		for (int i = 0; i < nVerticalSteps; i++)
 		{
-			if (!(pointsMatrix[i][j].x == 0.0 && pointsMatrix[i][j].y == 0.0 && pointsMatrix[i][j].z == 0.0))	// if the point is (0, 0, 0), it means that it didn't collide with anything
+			for (int j = 0; j < pointsPerVerticalStep[i]; j++)
 			{
-				countValidPoints++;
+				if (!(pointsMatrix[i][j].x == 0.0 && pointsMatrix[i][j].y == 0.0 && pointsMatrix[i][j].z == 0.0))	// if the point is (0, 0, 0), it means that it didn't collide with anything
+				{
+					countValidPoints++;
 
-				// vertexData; fill point cloud .ply
-				fileOutputLines += std::to_string(pointsMatrix[i][j].x - centerDot.x) + " " + std::to_string(pointsMatrix[i][j].y - centerDot.y) + " " + std::to_string(pointsMatrix[i][j].z - centerDot.z) + "\n";
+					// vertexData; fill point cloud .ply
+					fileOutputLines += std::to_string(pointsMatrix[i][j].x - centerDot.x) + " " + std::to_string(pointsMatrix[i][j].y - centerDot.y) + " " + std::to_string(pointsMatrix[i][j].z - centerDot.z) + "\n";
 
-				// fill LiDAR_PointCloud_points.txt
-				fileOutputPointsLines += std::to_string(pointsMatrix[i][j].x - centerDot.x) + " " + std::to_string(pointsMatrix[i][j].y - centerDot.y) + " " + std::to_string(pointsMatrix[i][j].z - centerDot.z) + " " + std::to_string(pointsProjectedMatrix[i][j].screenCoordX) + " " + std::to_string(pointsProjectedMatrix[i][j].screenCoordY) + " " + std::to_string(pointsProjectedMatrix[i][j].pictureId) + "\n";
+					// fill LiDAR_PointCloud_points.txt
+					fileOutputPointsLines += std::to_string(pointsMatrix[i][j].x - centerDot.x) + " " + std::to_string(pointsMatrix[i][j].y - centerDot.y) + " " + std::to_string(pointsMatrix[i][j].z - centerDot.z) + " " + std::to_string(pointsProjectedMatrix[i][j].screenCoordX) + " " + std::to_string(pointsProjectedMatrix[i][j].screenCoordY) + " " + std::to_string(pointsProjectedMatrix[i][j].pictureId) + "\n";
 
-				// fill point cloud with errors .ply
-				fileOutputErrorLines += std::to_string(pointsWithErrorMatrix[i][j].x) + " " + std::to_string(pointsWithErrorMatrix[i][j].y) + " " + std::to_string(pointsWithErrorMatrix[i][j].z) + "\n";
+					// fill point cloud with errors .ply
+					//fileOutputErrorLines += std::to_string(pointsMatrix[i][j].x - centerDot.x) + " " + std::to_string(pointsMatrix[i][j].y - centerDot.y) + " " + std::to_string(pointsMatrix[i][j].z - centerDot.z) + " " + std::to_string(heightAboveGround) + "\n";
 
-				// fill LiDAR_PointCloud_error.txt
-				fileOutputErrorPointsLines += std::to_string(pointsWithErrorMatrix[i][j].x) + " " + std::to_string(pointsWithErrorMatrix[i][j].y) + " " + std::to_string(pointsWithErrorMatrix[i][j].z) + " " + std::to_string(pointsProjectedWithErrorMatrix[i][j].screenCoordX) + " " + std::to_string(pointsProjectedWithErrorMatrix[i][j].screenCoordY) + " " + std::to_string(pointsProjectedWithErrorMatrix[i][j].pictureId) + "\n";
+					//// fill LiDAR_PointCloud_error.txt
+					//fileOutputErrorPointsLines += std::to_string(pointsWithErrorMatrix[i][j].x) + " " + std::to_string(pointsWithErrorMatrix[i][j].y) + " " + std::to_string(pointsWithErrorMatrix[i][j].z) + " " + std::to_string(pointsProjectedWithErrorMatrix[i][j].screenCoordX) + " " + std::to_string(pointsProjectedWithErrorMatrix[i][j].screenCoordY) + " " + std::to_string(pointsProjectedWithErrorMatrix[i][j].pictureId) + "\n";
 
-				// fill labels txt
-				labelsFileStreamWLines += std::to_string(labels[i][j]) + "\n";
+					// fill labels txt
+					labelsFileStreamWLines += std::to_string(labels[i][j]) + "\n";
 
-				// fill labels detailed txt
-				labelsDetailedFileStreamWLines += std::to_string(labelsDetailed[i][j]) + "\n";
+					// fill labels detailed txt
+					labelsDetailedFileStreamWLines += std::to_string(labelsDetailed[i][j]) + "\n";
+				}
 			}
 		}
+
+		fileOutput << "ply\nformat ascii 1.0\nelement vertex " + std::to_string(countValidPoints) + "\nproperty float x\nproperty float y\nproperty float z\nend_header\n";
+		//fileOutputError << "ply\nformat ascii 1.0\nelement vertex " + std::to_string(countValidPoints) + "\nproperty float x\nproperty float y\nproperty float z\nend_header\n";
+
+		fileOutput << fileOutputLines;
+		fileOutputPoints << fileOutputPointsLines;
+		//fileOutputError << fileOutputErrorLines;
+		//fileOutputErrorPoints << fileOutputErrorPointsLines;
+		labelsFileStreamW << labelsFileStreamWLines;
+		labelsDetailedFileStreamW << labelsDetailedFileStreamWLines;
+
+		Vector3 playerCurrentRot = ENTITY::GET_ENTITY_ROTATION(PLAYER::PLAYER_PED_ID(), 0);
+		Vector3 playerForwardDirection = ENTITY::GET_ENTITY_FORWARD_VECTOR(PLAYER::PLAYER_PED_ID());
+
+		// write to a file inside a sample, the rotation the the character is facing
+		std::ofstream sampleCharRotFileW;
+		sampleCharRotFileW.open(filePath + playerRotationInSampleFilename);
+		sampleCharRotFileW << std::to_string(playerCurrentRot.x) + " " + std::to_string(playerCurrentRot.y) + " " + std::to_string(playerCurrentRot.z) + " " + std::to_string(playerForwardDirection.x) + " " + std::to_string(playerForwardDirection.y) + " " + std::to_string(playerForwardDirection.z);
+		sampleCharRotFileW.close();
+
 	}
 
-	fileOutput << "ply\nformat ascii 1.0\nelement vertex " + std::to_string(countValidPoints) + "\nproperty float x\nproperty float y\nproperty float z\nend_header\n";
-	fileOutputError << "ply\nformat ascii 1.0\nelement vertex " + std::to_string(countValidPoints) + "\nproperty float x\nproperty float y\nproperty float z\nend_header\n";
-
-	fileOutput << fileOutputLines;
-	fileOutputPoints << fileOutputPointsLines;
-	fileOutputError << fileOutputErrorLines;
-	fileOutputErrorPoints << fileOutputErrorPointsLines;
-	labelsFileStreamW << labelsFileStreamWLines;
-	labelsDetailedFileStreamW << labelsDetailedFileStreamWLines;
-
-	Vector3 playerCurrentRot = ENTITY::GET_ENTITY_ROTATION(PLAYER::PLAYER_PED_ID(), 0);
-	Vector3 playerForwardDirection = ENTITY::GET_ENTITY_FORWARD_VECTOR(PLAYER::PLAYER_PED_ID());
-
-	// write to a file inside a sample, the rotation the the character is facing
-	std::ofstream sampleCharRotFileW;
-	sampleCharRotFileW.open(filePath + playerRotationInSampleFilename);
-	sampleCharRotFileW << std::to_string(playerCurrentRot.x) + " " + std::to_string(playerCurrentRot.y) + " " + std::to_string(playerCurrentRot.z) + " " + std::to_string(playerForwardDirection.x) + " " + std::to_string(playerForwardDirection.y) + " " + std::to_string(playerForwardDirection.z);
-	sampleCharRotFileW.close();
 
 	GAMEPLAY::SET_GAME_PAUSED(false);
 	TIME::PAUSE_CLOCK(false);
@@ -1683,10 +1805,12 @@ void PostLidarScanProcessing(std::string filePath)
 
 	fileOutput.close();
 	fileOutputPoints.close();
-	fileOutputError.close();
-	fileOutputErrorPoints.close();
+	//fileOutputError.close();
+	//fileOutputErrorPoints.close();
 	labelsFileStreamW.close(); // close labels file
 	labelsDetailedFileStreamW.close();
+
+	allTruncated = 1;
 
 	//Restore original camera
 	CAM::RENDER_SCRIPT_CAMS(0, 0, 0, 1, 0);
@@ -1696,8 +1820,8 @@ void PostLidarScanProcessing(std::string filePath)
 	GAMEPLAY::SET_TIME_SCALE(NormalSpeed);
 
 	//Restore HUD and Radar
-	UI::DISPLAY_RADAR(true);
-	UI::DISPLAY_HUD(true);
+	//UI::DISPLAY_RADAR(true);
+	//UI::DISPLAY_HUD(true);
 	ENTITY::RESET_ENTITY_ALPHA(PLAYER::PLAYER_PED_ID());		// restore alphalevel to make character visible again
 
 	//log.close();

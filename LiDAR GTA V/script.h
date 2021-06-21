@@ -51,7 +51,7 @@ void SetInitialConfigs();
 void SetLidarHeight();
 
 // lidar scanning start functioon
-void lidar(	double horiFovMin, double horiFovMax, double vertFovMin, double vertFovMax, double horiStep, double vertStep, int range, std::string filePath, double error, int errorDist,	std::ofstream& log);
+int lidar(	double horiFovMin, double horiFovMax, double vertFovMin, double vertFovMax, double horiStep, double vertStep, int range, std::string filePath, double error, int errorDist,	std::ofstream& log);
 
 ray angleOffsetRaycast(double angleOffsetX, double angleOffsetZ, int range);
 
@@ -92,7 +92,7 @@ void ScriptMain();
 
 //void addVehicleDims(Entity vehicleHandle, std::string entityType, std::ofstream& log, std::string filePath);
 
-void RegisterVehicleInformation(Entity vehicleHandle, std::string entityType, std::string filePath);
+int RegisterVehicleInformation(Entity vehicleHandle, std::string entityType, std::string filePath);
 std::vector<Vector3> GetBestMinMaxCoords(std::vector<Vector3> corners, Vector3 vehiclePos, bool& truncated, Vector3 canonicalMinCoords, Vector3 canonicalMaxCoords, std::string filePath);
 
 Vector3 rotate_point_around_x_axis(Vector3 point, float angle);

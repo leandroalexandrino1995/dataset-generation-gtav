@@ -231,8 +231,12 @@ void LogMaxNumberOfPoints(std::string filePath, std::string functionName, float 
 /*
 	Logs a vehicle box corner positions in the local coordinate system of the vehicle, world coordinate system, camera coordinate system, projection onto image view
 */
+//int
 void LogVehicleCornersCoords(std::string filePath, std::string functionName, Entity vehicleHandle, float vehicleAngleZ, std::vector<Vector3> corners, Vector3 centerDot, Vector3 vehiclePos, int resolutionX, int resolutionY, bool cornersRotated)
 {
+
+	//int truncated = 1;
+
 	std::string line = "[ " + functionName + "() ] Vehicle Entity " + std::to_string(vehicleHandle) + " information:";
 
 	if (!cornersRotated)
@@ -281,10 +285,15 @@ void LogVehicleCornersCoords(std::string filePath, std::string functionName, Ent
 		float projectedY;
 		GRAPHICS::_WORLD3D_TO_SCREEN2D(corners[i].x + vehiclePos.x, corners[i].y + vehiclePos.y, corners[i].z + vehiclePos.z, &projectedX, &projectedY);
 		
-		line += "\n\t\tcorners[" + std::to_string(i) + "]: " + std::to_string((int)(projectedX * resolutionX * 1.5)) + ", " + std::to_string((int)(projectedY * resolutionY * 1.5));
+		int projectedXres = (int)(projectedX * resolutionX * 1.5);
+		int projectedYres = (int)(projectedY * resolutionY * 1.5);
+
+		line += "\n\t\tcorners[" + std::to_string(i) + "]: " + std::to_string(projectedXres) + ", " + std::to_string(projectedYres);
 	}
 
 	logString(filePath, line + "\n");
+
+	//return truncated;
 }
 
 std::vector<std::vector<float>> worldToLocalTransformMatrix_3x3(Vector3 globalXaxis, Vector3 globalYaxis, Vector3 globalZaxis, Vector3 localXaxis, Vector3 localYaxis, Vector3 localZaxis)
