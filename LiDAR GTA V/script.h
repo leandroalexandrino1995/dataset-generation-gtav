@@ -35,6 +35,7 @@ struct ray {
 	int entityTypeId;
 	int rayResult;
 	int hitEntityHandle;
+	Hash materialHash;
 };
 
 struct ProjectedPointData {

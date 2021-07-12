@@ -87,6 +87,8 @@ std::string playerRotationInSampleFilename = "_rotation.txt";
 std::ofstream labelsFileStreamW;
 // Writing segmentation by (gameobject) entity id (detailed)
 std::ofstream labelsDetailedFileStreamW;
+// Writing segmentation by material hash
+std::ofstream materialHashFileStreamW;
 // Writing route positions
 std::ofstream positionsDBFileW;
 // Writing route rotation associated with the correspondent positions
@@ -195,6 +197,7 @@ std::vector<std::vector<ProjectedPointData>> pointsProjectedMatrix;
 
 std::vector<std::vector<int>> labels;
 std::vector<std::vector<int>> labelsDetailed;
+std::vector<std::vector<int>> materialHash;
 
 std::vector<int> pointsPerVerticalStep;
 
@@ -209,8 +212,8 @@ std::map<Entity, std::string> vehiclesLookupTable;
 #pragma region Initial mod configurations
 
 
-float vehicleDensityMultiplierLimit = 2;
-float currentVehicleDenstiyMultiplier = 2;
+float vehicleDensityMultiplierLimit = 1;
+float currentVehicleDenstiyMultiplier = 1;
 float pedDensityMultiplierLimit = 2;
 float currentPedDensityMultiplier = 2;
 
@@ -821,11 +824,14 @@ ray raycast(Vector3 source, Vector3 direction, float maxDistance, int intersectF
 	surfaceNormal.y = 0;
 	surfaceNormal.z = 0;
 
-	int rayResult = WORLDPROBE::_GET_RAYCAST_RESULT(rayHandle, &hit, &hitCoordinates, &surfaceNormal, &hitEntityHandle);
+	Hash materialHashHit;
+
+	int rayResult = WORLDPROBE::_GET_RAYCAST_RESULT_2(rayHandle, &hit, &hitCoordinates, &surfaceNormal, &materialHashHit, &hitEntityHandle);
 	result.rayResult = rayResult;
 	result.hit = hit;
 	result.hitCoordinates = hitCoordinates;
 	result.surfaceNormal = surfaceNormal;
+	result.materialHash = materialHashHit;
 	result.hitEntityHandle = hitEntityHandle;	// true id of the object that the raycast collided with
 
 	std::string entityTypeName = "RoadsBuildings";	// default name for hitEntityHandle = -1
@@ -1048,6 +1054,7 @@ void SetupGameForLidarScan(double horiFovMin, double horiFovMax, double vertFovM
 	//fileOutputErrorPoints.open(filePath + "_error.txt");
 	labelsFileStreamW.open(filePath + "_labels.txt");					// open labels file
 	labelsDetailedFileStreamW.open(filePath + "_labelsDetailed.txt");	// open labels file
+	materialHashFileStreamW.open(filePath + "_materialHash.txt");		// open hash file
 
 	//Disable HUD and Radar
 	UI::DISPLAY_HUD(false);
@@ -1069,6 +1076,7 @@ void SetupGameForLidarScan(double horiFovMin, double horiFovMax, double vertFovM
 
 	labels = std::vector<std::vector<int>>(no_of_rows + 1, std::vector<int>(no_of_cols + 1));
 	labelsDetailed = std::vector<std::vector<int>>(no_of_rows + 1, std::vector<int>(no_of_cols + 1));
+	materialHash = std::vector<std::vector<int>>(no_of_rows + 1, std::vector<int>(no_of_cols + 1));
 
 	pointsPerVerticalStep = std::vector<int>(nVerticalSteps + 1);
 
@@ -1597,6 +1605,8 @@ int lidar(double horiFovMin, double horiFovMax, double vertFovMin, double vertFo
 				// gameobject instance entity id
 				labelsDetailed[indexRowCounter][indexColumnCounter] = result.hitEntityHandle;
 
+				materialHash[indexRowCounter][indexColumnCounter] = result.materialHash;
+
 				// a raycast only outputs a point when it hits something
 				pointsPerVerticalStep[indexRowCounter]++;
 
@@ -1745,6 +1755,7 @@ void PostLidarScanProcessing(std::string filePath)
 		//std::string fileOutputErrorPointsLines = "";
 		std::string labelsFileStreamWLines = "";
 		std::string labelsDetailedFileStreamWLines = "";
+		std::string materialHashFileStreamWLines = "";
 
 		int countValidPoints = 0;
 		// fill LiDAR_PointCloud_error.txt
@@ -1773,6 +1784,8 @@ void PostLidarScanProcessing(std::string filePath)
 
 					// fill labels detailed txt
 					labelsDetailedFileStreamWLines += std::to_string(labelsDetailed[i][j]) + "\n";
+
+					materialHashFileStreamWLines += std::to_string(materialHash[i][j]) + "\n";
 				}
 			}
 		}
@@ -1786,6 +1799,7 @@ void PostLidarScanProcessing(std::string filePath)
 		//fileOutputErrorPoints << fileOutputErrorPointsLines;
 		labelsFileStreamW << labelsFileStreamWLines;
 		labelsDetailedFileStreamW << labelsDetailedFileStreamWLines;
+		materialHashFileStreamW << materialHashFileStreamWLines;
 
 		Vector3 playerCurrentRot = ENTITY::GET_ENTITY_ROTATION(PLAYER::PLAYER_PED_ID(), 0);
 		Vector3 playerForwardDirection = ENTITY::GET_ENTITY_FORWARD_VECTOR(PLAYER::PLAYER_PED_ID());
@@ -1809,6 +1823,7 @@ void PostLidarScanProcessing(std::string filePath)
 	//fileOutputErrorPoints.close();
 	labelsFileStreamW.close(); // close labels file
 	labelsDetailedFileStreamW.close();
+	materialHashFileStreamW.close();
 
 	allTruncated = 1;
 
