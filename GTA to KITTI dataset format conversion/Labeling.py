@@ -37,7 +37,7 @@ class Labeling:
         | dimX | dimY | dimZ
         | objectType | truncated"
         '''
-        self.isEmpty = False
+        self.isEmpty = True
 
         # entityInfoDict
         entityInfoDict = gtaSample.loadTxtFileToDict(configurations.entityInfoFn)
@@ -170,27 +170,59 @@ class Labeling:
                 # ignore entity
                 continue
 
+            if self.isEmpty and entityInfoDict[key][22] != "DontCare" and truncated <= 0.50 and abs(ymax_trunc - ymin_trunc) >= 25:
+                self.isEmpty = False
+
+            DontCare = 0
+
+            if entityInfoDict[key][22] != "DontCare" and (truncated > 0.50 or abs(ymax_trunc - ymin_trunc) < 25):
+                DontCare = 1
+
             # object type: car
-            label_line += entityInfoDict[key][22] + " "
-            
+            if DontCare == 1:
+                label_line += "DontCare "
+            elif entityInfoDict[key][22] == "DontCare":
+                label_line += "Ignore "
+            else:
+                label_line += entityInfoDict[key][22] + " "
+
             # truncated
-            label_line += str(round(truncated,2)) + " "
+            if (entityInfoDict[key][22] == "DontCare") or DontCare == 1:
+                label_line += "-1 "
+            else:
+                label_line += str(round(truncated,2)) + " "
+                    
 
             # occluded
-            label_line += "0.00 "
+            if (entityInfoDict[key][22] == "DontCare") or DontCare == 1:
+                label_line += "-1 "
+            else:
+                label_line += "0.00 "
 
             # alpha
-            label_line += "0.00 "
+            if (entityInfoDict[key][22] == "DontCare") or DontCare == 1:
+                label_line += "-10 "
+            else:
+                label_line += "0.00 "
 
             # label_line += str(round(xmin,2)) + " " + str(round(ymin,2)) + " " + str(round(xmax,2)) + " " + str(round(ymax,2)) + " / "
 
             label_line += str(round(xmin_trunc,2)) + " " + str(round(ymin_trunc,2)) + " " + str(round(xmax_trunc,2)) + " " + str(round(ymax_trunc,2)) + " "
 
-            label_line += str(bb3d_height) + " " + str(bb3d_width) + " " + str(bb3d_length) + " "
+            if (entityInfoDict[key][22] == "DontCare") or DontCare == 1:
+                label_line += "-1 -1 -1 "
+            else:
+                label_line += str(bb3d_height) + " " + str(bb3d_width) + " " + str(bb3d_length) + " "
             
-            label_line += str(orientedEntityPos[0]) + " " + str(orientedEntityPos[1]) + " " + str(orientedEntityPos[2]) + " "
+            if (entityInfoDict[key][22] == "DontCare") or DontCare == 1:
+                label_line += "-1000 -1000 -1000 "
+            else:
+                label_line += str(orientedEntityPos[0]) + " " + str(orientedEntityPos[1]) + " " + str(orientedEntityPos[2]) + " "
 
-            label_line += str(obj_rot_rads) + " "
+            if (entityInfoDict[key][22] == "DontCare") or DontCare == 1:
+                label_line += "-10 "
+            else:
+                label_line += str(obj_rot_rads) + " "
 
             # distances[distance] = len(contents_list)535068240231888
 
@@ -216,17 +248,23 @@ class Labeling:
 
         test = []
 
+        to_print = []
+
         for x in distances.keys():
             if(len(test) == 0):
                 test.append(contents_list[x])
+                line = contents_list[x]
+                split = line.split(" ")
+                if((split[0] != "Ignore")):
+                    to_print.append(line)
             else:
                 # #print("AQUI!!!!")
-                intersection = self.calculateIntesection(left, top, right, bottom, distances.keys(), len(test)+1)
                 #print(intersection)
+                # if (entityInfoDict[key][22] == "DontCare"):
+                #     intersection = -1
+                # else:
+                intersection = self.calculateIntesection(left, top, right, bottom, distances.keys(), len(test)+1)
                 if(int(intersection) == 100 or intersection < 0.00):
-                    # #print("OLA")
-                    # gtaSample.saveListIntoTxtFile(test, dirname, filename)
-                    # sys.exit('Algo errado na parte do truncation')
                     intersection = 3.00
                 elif(0.00 < intersection < 30.00 ):
                     intersection = 1.00
@@ -234,13 +272,23 @@ class Labeling:
                     intersection = 2.00
                 line = contents_list[x]
                 split = line.split(" ")
+                # print(split)
                 line_to_append = ""
-                for k in range(len(split)):
-                    if k != 2:
-                        line_to_append += split[k] + " "
-                    else:
-                        line_to_append += str(intersection) + " "
-                test.append(line_to_append)
+                if (split[0] == "DontCare"):
+                    test.append(line)
+                    to_print.append(line)
+                elif (split[0] == "Ignore"):
+                    test.append(line)
+                else:
+                    for k in range(len(split)):
+                        if k != 2:
+                            line_to_append += split[k] + " "
+                        else:
+                            line_to_append += str(intersection) + " "
+                    test.append(line_to_append)
+                    to_print.append(line_to_append)
+
+        # print(to_print)
 
         # # if list not empty
         # if contents_list:          
@@ -250,10 +298,14 @@ class Labeling:
 
             
         # if list not empty
-        if test:          
-            gtaSample.saveListIntoTxtFile(test, dirname, filename)
-        else:
-            self.isEmpty = True
+        # if test:          
+        #     gtaSample.saveListIntoTxtFile(test, dirname, filename)
+        # else:
+        #     self.isEmpty = True
+
+        if not self.isEmpty:          
+            gtaSample.saveListIntoTxtFile(to_print, dirname, filename)
+        
 
     def calculateIntesection(self, left, top, right, bottom, keys, xs):
 

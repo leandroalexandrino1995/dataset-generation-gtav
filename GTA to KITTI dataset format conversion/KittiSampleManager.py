@@ -32,6 +32,11 @@ class KittiSampleManager():
         self.kittiViewsDirTesting = outputRootDir + configurations.kittiViewsDirTesting
         self.kittiCalibDirTesting = outputRootDir + configurations.kittiCalibDirTesting
 
+        self.kittiLabelsDirExtra = outputRootDir + configurations.kittiLabelsDirExtra
+        self.kittiVelodyneDirExtra = outputRootDir + configurations.kittiVelodyneDirExtra
+        self.kittiViewsDirExtra = outputRootDir + configurations.kittiViewsDirExtra
+        self.kittiCalibDirExtra = outputRootDir + configurations.kittiCalibDirExtra
+
         self.gtaSample = gtaSample
 
         #self.fov = 75   # even though I use 50 in the horizontal fov of gta
@@ -52,7 +57,7 @@ class KittiSampleManager():
         for i in range(0, 6-n_digits):
             output_file_name = output_file_name + "0"
         
-        if len(output_file_name) is not 6:
+        if len(output_file_name) != 6:
             output_file_name = output_file_name + str(sampleCounter) if sampleCounter < 7481 else output_file_name + str(sampleCounter-7481) 
 
         # create the hierarchy of directories
@@ -67,35 +72,43 @@ class KittiSampleManager():
         Path(self.kittiLabelsDirTesting).mkdir(parents=True, exist_ok=True)
         Path(self.kittiCalibDirTesting).mkdir(parents=True, exist_ok=True)
 
+        Path(self.kittiLabelsDirExtra).mkdir(parents=True, exist_ok=True)
+        Path(self.kittiVelodyneDirExtra).mkdir(parents=True, exist_ok=True)
+        Path(self.kittiViewsDirExtra).mkdir(parents=True, exist_ok=True)
+        Path(self.kittiCalibDirExtra).mkdir(parents=True, exist_ok=True)
+
         # save image
         if sampleCounter < 7481:
             self.gtaSample.imageView.saveImage(self.gtaSample.imageView.kittiImage, self.kittiViewsDir, output_file_name + ".png")
-        else:
+        elif sampleCounter < 14999:
             self.gtaSample.imageView.saveImage(self.gtaSample.imageView.kittiImage, self.kittiViewsDirTesting, output_file_name + ".png")
+        else:
+            self.gtaSample.imageView.saveImage(self.gtaSample.imageView.kittiImage, self.kittiViewsDirExtra, output_file_name + ".png")
         
         if configurations.includeIntensity[0]:
             # save point cloud - the full rotated point cloud
             if sampleCounter < 7481:
                 saveKittiVelodyneFile(addIntensityToPointCloud(self.gtaSample.pcData.list_rotated_raw_pc, dummy_value=self.configurations.includeIntensity[1]), output_file_name + ".bin", self.kittiVelodyneDir)
-            else:
+            elif sampleCounter < 14999:
                 saveKittiVelodyneFile(addIntensityToPointCloud(self.gtaSample.pcData.list_rotated_raw_pc, dummy_value=self.configurations.includeIntensity[1]), output_file_name + ".bin", self.kittiVelodyneDirTesting)
-        elif self.noBackground:
-            if sampleCounter < 7481:
-                saveKittiVelodyneFile(self.gtaSample.pcData.list_rotated_raw_pc, output_file_name + ".bin", self.kittiVelodyneDir)
             else:
-                saveKittiVelodyneFile(self.gtaSample.pcData.list_rotated_raw_pc, output_file_name + ".bin", self.kittiVelodyneDirTesting)
+                saveKittiVelodyneFile(addIntensityToPointCloud(self.gtaSample.pcData.list_rotated_raw_pc, dummy_value=self.configurations.includeIntensity[1]), output_file_name + ".bin", self.kittiVelodyneDirExtra)
         else:
             if sampleCounter < 7481:
                 saveKittiVelodyneFile(self.gtaSample.pcData.list_rotated_raw_pc, output_file_name + ".bin", self.kittiVelodyneDir)
-            else:
+            elif sampleCounter < 14999:
                 saveKittiVelodyneFile(self.gtaSample.pcData.list_rotated_raw_pc, output_file_name + ".bin", self.kittiVelodyneDirTesting)
+            else:
+                saveKittiVelodyneFile(self.gtaSample.pcData.list_rotated_raw_pc, output_file_name + ".bin", self.kittiVelodyneDirExtra)
         
         # save calibration info
         calib = Calibration((self.gtaSample.imageView.kittiImage.shape[1], self.gtaSample.imageView.kittiImage.shape[0]), self.configurations.fov)
         if sampleCounter < 7481:
             calib.saveCalibrationFile(self.kittiCalibDir, output_file_name + ".txt")
-        else:
+        elif sampleCounter < 14999:
             calib.saveCalibrationFile(self.kittiCalibDirTesting, output_file_name + ".txt")
+        else:
+            calib.saveCalibrationFile(self.kittiCalibDirExtra, output_file_name + ".txt")
 
         # labels info
         if sampleCounter < 7481:
@@ -109,7 +122,7 @@ class KittiSampleManager():
                 os.remove(self.kittiViewsDir + output_file_name + ".png")
                 os.remove(self.kittiCalibDir + output_file_name + ".txt")
 
-        else:
+        elif sampleCounter < 14999:
             label = Labeling(self.gtaSample, calib, self.kittiLabelsDirTesting, output_file_name + ".txt", configurations, fv_only_entities=True)
 
             # try:
@@ -126,6 +139,22 @@ class KittiSampleManager():
                 os.remove(self.kittiViewsDirTesting + output_file_name + ".png")
                 os.remove(self.kittiCalibDirTesting + output_file_name + ".txt")
 
+        else:
+            label = Labeling(self.gtaSample, calib, self.kittiLabelsDirExtra, output_file_name + ".txt", configurations, fv_only_entities=True)
+
+            # try:
+            #     os.remove(self.kittiLabelsDirTesting + output_file_name + ".txt")
+            # except FileNotFoundError:
+            #     pass
+
+
+            if label.isEmpty:
+                self.isEmpty = True
+                # print("Gta Sample doesn't have entities! It will be ignored.") # <- tirei aqui
+                # remove sample with empty label file
+                os.remove(self.kittiVelodyneDirExtra + output_file_name + ".bin")
+                os.remove(self.kittiViewsDirExtra + output_file_name + ".png")
+                os.remove(self.kittiCalibDirExtra + output_file_name + ".txt")
 
 
 

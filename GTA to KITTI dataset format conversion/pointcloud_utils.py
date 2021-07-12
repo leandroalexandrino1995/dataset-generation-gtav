@@ -44,6 +44,7 @@ def saveKittiVelodyneFile(tuple_list, filename, directory):
     '''
     Saves pointcloud in binary file and is independent of the number of properties in the pointcloud points
     '''
+
     with open(directory + filename, "wb") as f:
         for point in tuple_list:
             s = struct.pack('f'*len(point), *point)

@@ -5,6 +5,7 @@ import random
 import cv2
 import os.path
 from PcLabeledObject import PcLabeledObject
+from UiConfigParams import ConfigParams
 
 class PcRaw:
     '''
@@ -42,7 +43,7 @@ class PcRaw:
         # self.list_raw_projected_points = list_raw_projected_points
 
         self.list_rotated_raw_pc = self.rotatePcToAlignWithRectCamCoordSystem(self.list_raw_pc, self.rotation_amount)
-        
+
         self.debug(debugMode)
 
     def rotatePcToAlignWithRectCamCoordSystem(self, point_list, rotation_rad):
@@ -67,18 +68,29 @@ class PcRaw:
         '''
         Rotate a point around the z axis.
         Arguments:
-            - point: tuple with 3 elements (x, y, z) corresponding the point to be rotated
+            - point: tuple with 3/4 elements (x, y, z)/(x, y, z, r) corresponding the point to be rotated
             - angle_rad: angle to rotate the point around the z (up) axis
         Returns:
             - tuple with the rotated point coordinates (x, y, z)
         '''
-        p_x, p_y, p_z = point
+
+        # print(len(point))
+
+        if len(point) == 3:
+
+            p_x, p_y, p_z = point
+
+        else:
+            p_x, p_y, p_z, p_r = point
 
         r_x = (p_x)*math.cos(angle_rad) - (p_y)*math.sin(angle_rad)
         r_y = (p_x)*math.sin(angle_rad) + (p_y)*math.cos(angle_rad)
         r_z = (p_z)
 
-        return (r_x, r_y, r_z)
+        if len(point) == 3:
+            return (r_x, r_y, r_z)
+        else:
+            return (r_x, r_y, r_z, p_r)
 
     def rotatePointAroundXaxis(self, point, angle_rad):
         '''

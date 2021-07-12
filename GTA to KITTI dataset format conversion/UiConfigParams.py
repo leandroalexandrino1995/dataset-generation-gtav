@@ -5,17 +5,32 @@ from enum import Enum
 @dataclass
 class ConfigParams:
     # kitti dataset directories
-    kittiLabelsDir: str = 'data_object_label_2/training/label_2/'
-    kittiVelodyneDir: str = 'data_object_velodyne/training/velodyne/'
-    kittiViewsDir: str = 'data_object_image_2/training/image_2/'
-    kittiCalibDir: str = 'data_object_calib/training/calib/'
+##    kittiLabelsDir: str = 'data_object_label_2/training/label_2/'
+##    kittiVelodyneDir: str = 'data_object_velodyne/training/velodyne/'
+##    kittiViewsDir: str = 'data_object_image_2/training/image_2/'
+##    kittiCalibDir: str = 'data_object_calib/training/calib/'
 
-    kittiLabelsDirTesting: str = 'data_object_label_2/testing/label_2/'
-    kittiVelodyneDirTesting: str = 'data_object_velodyne/testing/velodyne/'
-    kittiViewsDirTesting: str = 'data_object_image_2/testing/image_2/'
-    kittiCalibDirTesting: str = 'data_object_calib/testing/calib/'
+    kittiLabelsDir: str = 'training/label_2/'
+    kittiVelodyneDir: str = 'training/velodyne/'
+    kittiViewsDir: str = 'training/image_2/'
+    kittiCalibDir: str = 'training/calib/'
 
-    # gta inpu samples filenames
+##    kittiLabelsDirTesting: str = 'data_object_label_2/testing/label_2/'
+##    kittiVelodyneDirTesting: str = 'data_object_velodyne/testing/velodyne/'
+##    kittiViewsDirTesting: str = 'data_object_image_2/testing/image_2/'
+##    kittiCalibDirTesting: str = 'data_object_calib/testing/calib/'
+
+    kittiLabelsDirTesting: str = 'testing/label_2/'
+    kittiVelodyneDirTesting: str = 'testing/velodyne/'
+    kittiViewsDirTesting: str = 'testing/image_2/'
+    kittiCalibDirTesting: str = 'testing/calib/'
+
+    kittiLabelsDirExtra: str = 'extra/label_2/'
+    kittiVelodyneDirExtra: str = 'extra/velodyne/'
+    kittiViewsDirExtra: str = 'extra/image_2/'
+    kittiCalibDirExtra: str = 'extra/calib/'
+    
+    # gta input samples filenames
     pcPlyFn: str = "LiDAR_PointCloud.ply"
     pcPlyNoiseFn: str = "LiDAR_PointCloud_error.ply"
     pcLabelsFn: str = "LiDAR_PointCloud_labels.txt"

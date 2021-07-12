@@ -57,7 +57,7 @@ def compute(rootDir, rootKittiOutputDir, configurations):
         # preserve the order of the original point clouds
         dirs = sorted(dirs, key=lambda filename: int(filename.replace('LiDAR_PointCloud','')))
         for dirName in dirs[GTAFolder:]:
-            print('\n\n::::::: Current sample directory: ' + dirName + ' :::::::')
+            # print('\n\n::::::: Current sample directory: ' + dirName + ' :::::::') # Não vale a pena ter com o txt
             
             try:
 
@@ -118,11 +118,18 @@ def compute(rootDir, rootKittiOutputDir, configurations):
 
                 if not kittiSample.isEmpty:
                     kittiSampleCounter += 1
+                else:
+                    f = open("deleteFolders.txt", "a")
+                    f.write(str(toSave) + " ")
+                    f.close()
             except KeyboardInterrupt:
                 sys.exit("KeyboardInterrupt")
             except Exception as e:
                 print("Error occured")
                 print(e)
+                f = open("deleteFolders.txt", "a")
+                f.write(str(toSave) + " ")
+                f.close()
 
             # except ValueError:
             #     print("Value Error")
@@ -143,6 +150,8 @@ def compute(rootDir, rootKittiOutputDir, configurations):
             #pc_sample1.imageView.show_image_view_with_2d_bounding_boxes(pc_sample1.imageView.dict_2d_bb_of_kitti_image, pc_sample1.imageView.kitti_image, pc_sample1.pc_fv_raw_data.single_category_pcs_list[2].object_ids_list, window_size = 1)
 
             #input()
+
+    return
 
 if __name__=='__main__':
     allowExecution = True
