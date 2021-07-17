@@ -49,7 +49,7 @@ class ConfigParams:
 
     # data formatting settings used by the UI
     useNoise: bool = False                           
-    includeIntensity: (bool, float) = (True, 0)     
+    includeIntensity: (bool, float) = (False, 0)     
     ignoreVehicles: bool = False                      
     ignorePedestrians: bool = True                      
     filterByDistance: (bool, float) = (False, 50)       # ignore entities at a distance greater than the specified
