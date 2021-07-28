@@ -1,4 +1,6 @@
 import os
+from posixpath import join
+import time
 
 def main():
 
@@ -16,7 +18,7 @@ def main():
 
             line_num = []
 
-            lines = 0            
+            lines = 0
 
             path=os.path.join(root_dir+dirName, 'LiDAR_PointCloud_labels.txt')
 
@@ -33,13 +35,19 @@ def main():
             with open(path1, "r") as file:
                 text = file.readlines()[8:]
 
+            line_num_set = set(line_num)
+
+            # start = time.time()
+
             toWrite = "ply\nformat ascii 1.0\nelement vertex " + str(lines) +  "\nproperty float x\nproperty float y\nproperty float z\nproperty float intensity\nend_header\n"
 
             for i, x in enumerate(text):
-                if i in line_num:
-                    toWrite += str(x[:-2]) + " 1\n"
+                if i in line_num_set:
+                    toWrite += str(x[:-5]) + " 1\n"
                 else:
-                    toWrite += str(x[:-2]) + " 0\n"
+                    toWrite += str(x[:-5]) + " 0\n"
+
+            # print("Demorou ", time.time() -start)
 
             with open(path1, "w") as file:
                 file.write(toWrite)

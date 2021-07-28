@@ -144,70 +144,105 @@ def example():
     calculateIous(0, gtBB, infBB)
 
 def main():
-    inferedDataDirPath = "./Data/Generated Dataset - Frustum PointNet Inferences/predicted/"
-    groundTruthDataDirPath = "./Data/Generated Dataset - Frustum PointNet Inferences/groundtruth/"
+    # inferedDataDirPath = "./Data/Generated Dataset - Frustum PointNet Inferences/predicted/"
+    # groundTruthDataDirPath = "./Data/Generated Dataset - Frustum PointNet Inferences/groundtruth/"
+    groundTruthDataDirPath = "./Data/Generated Dataset/groundtruth/"
 
     iouRotated2DList = []
     iou3DList = []
 
-    inferedFilepaths = []
-    for subdir, dirs, files in os.walk(inferedDataDirPath):
-        for filename in files:
-            inferedFilepaths.append(inferedDataDirPath + filename)
+    # inferedFilepaths = []
+    # for subdir, dirs, files in os.walk(inferedDataDirPath):
+    #     for filename in files:
+    #         inferedFilepaths.append(inferedDataDirPath + filename)
 
     groundTruthFilepaths = []
     for subdir, dirs, files in os.walk(groundTruthDataDirPath):
         for filename in files:
             groundTruthFilepaths.append(groundTruthDataDirPath + filename)
 
-    if len(inferedFilepaths) != len(groundTruthFilepaths):
-        print("ERROR: The number of infered results files is not equal to the number of ground truth files")
-        return
+    # if len(inferedFilepaths) != len(groundTruthFilepaths):
+    #     print("ERROR: The number of infered results files is not equal to the number of ground truth files")
+    #     return
 
     # iterate through every sample files
-    for i in range(0, len(inferedFilepaths)): 
-        print("\n>>> File: " + inferedFilepaths[i])
+    for i in range(0, len(groundTruthFilepaths)): 
+        print("\n>>> File: " + groundTruthFilepaths[i])
+    # for i in range(0, len(inferedFilepaths)): 
+    #     print("\n>>> File: " + inferedFilepaths[i])
 
-        with open(inferedFilepaths[i]) as f:
-            inferedSampleLines = [line.rstrip() for line in f]
+    #     with open(inferedFilepaths[i]) as f:
+    #         inferedSampleLines = [line.rstrip() for line in f]
         
         with open(groundTruthFilepaths[i]) as f:
             groundTruthSampleLines = [line.rstrip() for line in f]
 
-        if not inferedSampleLines:
-            print("Infered sample file does not contain any entries.\nThis sample will be ignored")
-            continue
+        # if not inferedSampleLines:
+        #     print("Infered sample file does not contain any entries.\nThis sample will be ignored")
+        #     continue
 
-        if (len(inferedSampleLines) != len(groundTruthSampleLines)):
-            print("The number of objects in the infered data file:\n\t-" + inferedSampleLines[0] + "\nis not the same as in the corresponding ground truth sample.\nThis sample will be ignored")
-            continue
+        # if (len(inferedSampleLines) != len(groundTruthSampleLines)):
+        #     print("The number of objects in the infered data file:\n\t-" + inferedSampleLines[0] + "\nis not the same as in the corresponding ground truth sample.\nThis sample will be ignored")
+        #     continue
             
-        if len(inferedSampleLines) > 1:
-            print("Current script only supports one entry per sample.\nThis sample will be ignored")
-            continue
+        # if len(inferedSampleLines) > 1:
+        #     print("Current script only supports one entry per sample.\nThis sample will be ignored")
+        #     continue
 
         # iterate through every object inside a sample
-        for j in range(0, len(inferedSampleLines)):
+        # for j in range(0, len(inferedSampleLines)):
+        for j in range(0, len(groundTruthSampleLines)):
             # type, truncated, occluded, alpha, minx, miny, maxx, maxy, height, width, length, x, y, z, ry, score
-            infBBParams = inferedSampleLines[j].split(" ")
+            # infBBParams = inferedSampleLines[j].split(" ")
             gtBBParams = groundTruthSampleLines[j].split(" ")
 
+            if "DontCare" in gtBBParams[0]:
+                continue
+            
             # ground truth 3d bounding box
             gtBB = BoundingBoxData((float(gtBBParams[11]), float(gtBBParams[12]), float(gtBBParams[13])), float(gtBBParams[8]), float(gtBBParams[9]), float(gtBBParams[10]), float(gtBBParams[14]))
 
             # infered 3d bounding box
-            infBB = BoundingBoxData((float(infBBParams[11]), float(infBBParams[12]), float(infBBParams[13])), float(infBBParams[8]), float(infBBParams[9]), float(infBBParams[10]), float(infBBParams[14]))
+            # infBB = BoundingBoxData((float(infBBParams[11]), float(infBBParams[12]), float(infBBParams[13])), float(infBBParams[8]), float(infBBParams[9]), float(infBBParams[10]), float(infBBParams[14]))
 
-            iouRotated2D, iou3D = calculateIous(i, gtBB, infBB)
+            # iouRotated2D, iou3D = calculateIous(i, gtBB, infBB)
 
-            iouRotated2DList.append(iouRotated2D)
-            iou3DList.append(iou3D)
+            # iouRotated2DList.append(iouRotated2D)
+            # iou3DList.append(iou3D)
+
+            gtBBData = get3dBoundingBoxCorners(gtBB)
+
+            gtTopFaceCorners = getBoundingBoxTopFaceCorners(gtBBData)
+            gtTopFaceAreaCenter = getCenterPointOfVector2Polygon(gtTopFaceCorners)
+
+            poly_gt = Polygon ( [(gtTopFaceCorners[0].x, gtTopFaceCorners[0].y), 
+                                    (gtTopFaceCorners[1].x, gtTopFaceCorners[1].y), 
+                                    (gtTopFaceCorners[2].x, gtTopFaceCorners[2].y), 
+                                    (gtTopFaceCorners[3].x, gtTopFaceCorners[3].y)] )
+
+            windowName = 'GT bounding boxes'
+            windowSize = (300, 300)
+
+            windowMidPoint = (windowSize[0]/2, windowSize[1]/2)
+
+            image = np.zeros((windowSize[0], windowSize[1], 3), dtype="uint8")
+            cv2.imshow(windowName, image)
+
+            gtBoundingBoxEdges = getPolygonEdges(gtTopFaceCorners)
+
+            translationAmount = (int(windowMidPoint[0] - gtTopFaceAreaCenter[0] * scaleFactor), int(windowMidPoint[1] - gtTopFaceAreaCenter[1] * scaleFactor))
+
+            image = drawPolygon(image, gtBoundingBoxEdges, (0, 200, 200), 2, translationAmount, scaleFactor)
+
+            image = cv2.flip(image, 0)
+            cv2.imshow(windowName, image)
+            cv2.waitKey(0)
     
-    averageIoURotated2D = np.array(iouRotated2DList).mean(0)
-    averageIoU3D = np.array(iou3DList).mean(0)
+    # averageIoURotated2D = np.array(iouRotated2DList).mean(0)
+    # averageIoU3D = np.array(iou3DList).mean(0)
 
-    print("\nAverage Iou for BEV bounding boxes: " + str(averageIoURotated2D))
-    print("\nAverage Iou for 3D bounding boxes: " + str(averageIoU3D))
+    # print("\nAverage Iou for BEV bounding boxes: " + str(averageIoURotated2D))
+    # print("\nAverage Iou for 3D bounding boxes: " + str(averageIoU3D))
 
 
 

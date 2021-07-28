@@ -205,8 +205,6 @@ class Labeling:
             else:
                 label_line += "0.00 "
 
-            # label_line += str(round(xmin,2)) + " " + str(round(ymin,2)) + " " + str(round(xmax,2)) + " " + str(round(ymax,2)) + " / "
-
             label_line += str(round(xmin_trunc,2)) + " " + str(round(ymin_trunc,2)) + " " + str(round(xmax_trunc,2)) + " " + str(round(ymax_trunc,2)) + " "
 
             if (entityInfoDict[key][22] == "DontCare") or DontCare == 1:

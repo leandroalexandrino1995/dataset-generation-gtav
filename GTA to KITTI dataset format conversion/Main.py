@@ -103,8 +103,6 @@ def compute(rootDir, rootKittiOutputDir, configurations):
                     pointsList = pc_sample1.pcData.generatePointCloudWithoutBackground([EntityType.VEHICLE.value, EntityType.PEDESTRIAN.value])
 
                     pc_sample1.savePlyFile(configurations.noBackgroundPointsCloudFn, pointsList)
-
-                    # pc_sample1.savePlyFile(configurations.rotatedPointCloudFn, pointsList)
                 
                 else:
                     pc_sample1.savePlyFile(configurations.rotatedPointCloudFn, pc_sample1.pcData.list_rotated_raw_pc)

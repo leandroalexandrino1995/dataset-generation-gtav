@@ -7,8 +7,8 @@ import os
 '''
 
 # Path to the directory holding the dataset's labels
-rootDir = './label_2/'
-rootDir = '/media/joao/Elements/Removed/GTAtoKITTI/kitti/data_object_label_2/training/label_2/'
+# rootDir = './label_2/'
+rootDir = '/media/joao/My Passport/Elements/MaterialHash/GTAtoKITTI/kitti/training/label_2/'
 #destination_dir = '../../../../kitti/rgb_detections/'
 destination_dir = '/home/joao/Desktop/'
 image_dir = './image_2/'
