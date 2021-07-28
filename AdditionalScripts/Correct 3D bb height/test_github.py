@@ -245,9 +245,6 @@ def main ():
 
   for frame in ["000000", "000001", "000150", "000205", "000775", "000808", "000871", "001584", "001599", "001955", "002738", "003473", "003592", "007328"]:
       left_cam, velo, label_data, calib_data = loadKittiFiles(frame)
-      
-      print(label_data)
-
       f = plt.figure()
       
       # show the left camera image 
@@ -256,8 +253,6 @@ def main ():
       
       
       hs = labelToBoundingBox(ax, label_data, calib_data)
-
-      print(hs)
 
       with open(basedir+label+"/"+frame+".txt", "r") as f:
         label_text = f.readlines()
