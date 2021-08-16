@@ -263,7 +263,7 @@ def labelToBoundingBox(ax, labeld, calibd):
       if key != 'DontCare' :
         
         corners_2D, corners_3D, paths_2D, ratio, h = computeBox3D(labeld[key][o], P2_rect)
-        corners_2D, corners_3D, paths_2D, ratio, h = computeBox3D(labeld[key][o], P2_rect, height/ratio)
+        # corners_2D, corners_3D, paths_2D, ratio, h = computeBox3D(labeld[key][o], P2_rect, height/ratio)
         verts = paths_2D.T # corners_2D.T
         codes = [Path.LINETO]*verts.shape[0]
         codes[0] = Path.MOVETO
@@ -343,37 +343,8 @@ def main ():
       
       bb2d, bb3d, corners3d, hs = labelToBoundingBox(ax, label_data, calib_data)
 
-      print(hs)
-
-      with open(basedir+label+"/"+frame+".txt", "r") as f:
-        label_text = f.readlines()
-
-      aux = 0
-
-      with open("/home/joao/Desktop/"+frame+"_test.txt", "w") as f:
-        for i in label_text:
-          if "DontCare" not in i:
-            height = i.split(" ")[9]
-            for x in range(len(i.split(" "))):
-              if x != 9:
-                if i.split(" ")[x] != "\n":
-                  f.write(i.split(" ")[x]+" ")
-                else:
-                  f.write(i.split(" ")[x])
-              else:
-                f.write(str(hs[aux])+" ")
-          else:
-            f.write(i)
-
-          aux += 1
-
-      
-      # return
-
       plt.title(frame)
       plt.savefig(savedir+"/"+frame+"_withBB_github.png")
-
-      break
 
 
       # plt.savefig("/home/joao/Desktop/Diogo/"+frame+"_withBB_github.png")
@@ -382,22 +353,22 @@ def main ():
       # ax2 = f.add_subplot(3,1,2, )#projection="3d" )
       # pointCloudToBirdsEyeView(ax2, velo, bb3d)
 
-      to_write = "ply\nformat ascii 1.0\nelement vertex " + str(velo.shape[0]+corners3d.shape[1]) +  "\nproperty float x\nproperty float y\nproperty float z\nproperty float intensity\nend_header\n"
+      # to_write = "ply\nformat ascii 1.0\nelement vertex " + str(velo.shape[0]+corners3d.shape[1]) +  "\nproperty float x\nproperty float y\nproperty float z\nproperty float intensity\nend_header\n"
       
-      x = velo[:,0]
-      y = velo[:,1]
-      z = velo[:,2]
-      r = velo[:,3]
+      # x = velo[:,0]
+      # y = velo[:,1]
+      # z = velo[:,2]
+      # r = velo[:,3]
 
-      for i in range(velo.shape[0]):
-          to_write += str(x[i]) + " " + str(y[i]) + " " + str(z[i]) + " " + str(r[i]) + "\n"
+      # for i in range(velo.shape[0]):
+      #     to_write += str(x[i]) + " " + str(y[i]) + " " + str(z[i]) + " " + str(r[i]) + "\n"
 
-      for i in range(corners3d.shape[1]):
-          to_write += str(corners3d[0,i]) + " " + str(corners3d[1,i]) + " " + str(corners3d[2,i]) + " 1\n"
+      # for i in range(corners3d.shape[1]):
+      #     to_write += str(corners3d[0,i]) + " " + str(corners3d[1,i]) + " " + str(corners3d[2,i]) + " 1\n"
 
-      with open(savedir+"/"+frame+"_github.ply", "w") as f:
-      # with open("/home/joao/Desktop/Diogo/"+frame+"_github.ply", "w") as f:
-          f.write(to_write)
+      # with open(savedir+"/"+frame+"_github.ply", "w") as f:
+      # # with open("/home/joao/Desktop/Diogo/"+frame+"_github.ply", "w") as f:
+      #     f.write(to_write)
 
 
 if __name__ == '__main__':

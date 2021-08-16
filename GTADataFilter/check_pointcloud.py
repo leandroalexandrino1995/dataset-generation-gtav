@@ -21,3 +21,7 @@ for subdir, dirs, files in os.walk(root_dir):
 
             with open(filename, "w") as f:
                 f.write(to_write)
+
+
+
+

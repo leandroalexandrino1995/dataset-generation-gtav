@@ -36,8 +36,8 @@ class ConfigParams:
     pcLabelsFn: str = "LiDAR_PointCloud_labels.txt"
     pcLabelsDetailedFn: str = "LiDAR_PointCloud_labelsDetailed.txt"
     # pcProjectedPointsFn: str = "LiDAR_PointCloud_points.txt" -- Não tenho isto, será que é necessário?
-    fvImgFn: str = "LiDAR_PointCloud_Camera_Print_Day_0.bmp"
-    # fvImgFn: str = "LiDAR_PointCloud_Camera_Print_Day_0.jpg"
+    # fvImgFn: str = "LiDAR_PointCloud_Camera_Print_Day_0.bmp"
+    fvImgFn: str = "LiDAR_PointCloud_Camera_Print_Day_0.jpg"
     # output filenames
     rotationFn: str = "LiDAR_PointCloud_rotation.txt"
     entityInfoFn: str = "LiDAR_PointCloud_vehicles_dims.txt"

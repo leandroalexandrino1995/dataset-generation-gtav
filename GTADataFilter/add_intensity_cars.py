@@ -37,8 +37,6 @@ def main():
 
             line_num_set = set(line_num)
 
-            # start = time.time()
-
             toWrite = "ply\nformat ascii 1.0\nelement vertex " + str(lines) +  "\nproperty float x\nproperty float y\nproperty float z\nproperty float intensity\nend_header\n"
 
             for i, x in enumerate(text):
@@ -47,20 +45,8 @@ def main():
                 else:
                     toWrite += str(x[:-5]) + " 0\n"
 
-            # print("Demorou ", time.time() -start)
-
             with open(path1, "w") as file:
                 file.write(toWrite)
-
-            # return
-
-            # with open(path1, "w") as file:
-            #     file.write("ply\nformat ascii 1.0\nelement vertex " + str(lines) +  "\nproperty float x\nproperty float y\nproperty float z\nproperty float intensity\nend_header\n")
-            #     for i, x in enumerate(text):
-            #         if i in line_num:
-            #             file.write(str(x[:-2]) + " 1\n")
-            #         else:
-            #             file.write(str(x[:-2]) + " 0\n")
 
             toSave += 1
             f = open("AddInt.txt", "w")
