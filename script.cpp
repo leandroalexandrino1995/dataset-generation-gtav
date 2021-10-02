@@ -1768,10 +1768,10 @@ void PostLidarScanProcessing(std::string filePath)
 					countValidPoints++;
 
 					// vertexData; fill point cloud .ply
-					fileOutputLines += std::to_string(pointsMatrix[i][j].x - centerDot.x) + " " + std::to_string(pointsMatrix[i][j].y - centerDot.y) + " " + std::to_string(pointsMatrix[i][j].z - centerDot.z) + "\n";
+					fileOutputLines += std::to_string(pointsMatrix[i][j].x - centerDot.x) + " " + std::to_string(pointsMatrix[i][j].y - centerDot.y) + " " + std::to_string(pointsMatrix[i][j].z - centerDot.z) + std::to_string(GetEntitySpeed(labelsDetailed[i][j])) + "\n";
 
 					// fill LiDAR_PointCloud_points.txt
-					fileOutputPointsLines += std::to_string(pointsMatrix[i][j].x - centerDot.x) + " " + std::to_string(pointsMatrix[i][j].y - centerDot.y) + " " + std::to_string(pointsMatrix[i][j].z - centerDot.z) + " " + std::to_string(pointsProjectedMatrix[i][j].screenCoordX) + " " + std::to_string(pointsProjectedMatrix[i][j].screenCoordY) + " " + std::to_string(pointsProjectedMatrix[i][j].pictureId) + "\n";
+					//fileOutputPointsLines += std::to_string(pointsMatrix[i][j].x - centerDot.x) + " " + std::to_string(pointsMatrix[i][j].y - centerDot.y) + " " + std::to_string(pointsMatrix[i][j].z - centerDot.z) + " " + std::to_string(pointsProjectedMatrix[i][j].screenCoordX) + " " + std::to_string(pointsProjectedMatrix[i][j].screenCoordY) + " " + std::to_string(pointsProjectedMatrix[i][j].pictureId) + "\n";
 
 					// fill point cloud with errors .ply
 					//fileOutputErrorLines += std::to_string(pointsMatrix[i][j].x - centerDot.x) + " " + std::to_string(pointsMatrix[i][j].y - centerDot.y) + " " + std::to_string(pointsMatrix[i][j].z - centerDot.z) + " " + std::to_string(heightAboveGround) + "\n";
@@ -1794,7 +1794,7 @@ void PostLidarScanProcessing(std::string filePath)
 		//fileOutputError << "ply\nformat ascii 1.0\nelement vertex " + std::to_string(countValidPoints) + "\nproperty float x\nproperty float y\nproperty float z\nend_header\n";
 
 		fileOutput << fileOutputLines;
-		fileOutputPoints << fileOutputPointsLines;
+		//fileOutputPoints << fileOutputPointsLines;
 		//fileOutputError << fileOutputErrorLines;
 		//fileOutputErrorPoints << fileOutputErrorPointsLines;
 		labelsFileStreamW << labelsFileStreamWLines;

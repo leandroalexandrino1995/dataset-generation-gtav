@@ -120,7 +120,7 @@ void LogVehicleRotations(std::string filePath, std::string functionName, Entity 
 	Vector3 camRot = ENTITY::GET_ENTITY_ROTATION(PLAYER::PLAYER_PED_ID(), 0);
 	Vector3 camForwardVector = ENTITY::GET_ENTITY_FORWARD_VECTOR(PLAYER::PLAYER_PED_ID());
 
-	line += "\n\Entity: " + std::to_string(vehicleHandle);
+	line += "\n\tEntity: " + std::to_string(vehicleHandle);
 
 	line += "\n\tCamera rotation: " + std::to_string(camRot.x) + " " + std::to_string(camRot.y) + " " + std::to_string(camRot.z);
 	line += "\n\tCamera Forward vector (points in -Y direction): " + std::to_string(camForwardVector.x) + " " + std::to_string(camForwardVector.y) + " " + std::to_string(camForwardVector.z);
@@ -144,7 +144,7 @@ void LogPedestrianRotations(std::string filePath, std::string functionName, Enti
 	Vector3 camRot = ENTITY::GET_ENTITY_ROTATION(PLAYER::PLAYER_PED_ID(), 0);
 	Vector3 camForwardVector = ENTITY::GET_ENTITY_FORWARD_VECTOR(PLAYER::PLAYER_PED_ID());
 
-	line += "\n\Entity: " + std::to_string(vehicleHandle);
+	line += "\n\tEntity: " + std::to_string(vehicleHandle);
 
 	line += "\n\tCamera rotation: " + std::to_string(camRot.x) + " " + std::to_string(camRot.y) + " " + std::to_string(camRot.z);
 	line += "\n\tCamera Forward vector (points in -Y direction): " + std::to_string(camForwardVector.x) + " " + std::to_string(camForwardVector.y) + " " + std::to_string(camForwardVector.z);
@@ -152,8 +152,8 @@ void LogPedestrianRotations(std::string filePath, std::string functionName, Enti
 	Vector3 pedestrianRot = ENTITY::GET_ENTITY_ROTATION(vehicleHandle, 1);
 	Vector3 pedestrianRotForwardVector = ENTITY::GET_ENTITY_FORWARD_VECTOR(vehicleHandle);	 // local y vector
 
-	line += "\n\Pedestrian rotation: " + std::to_string(pedestrianRot.x) + " " + std::to_string(pedestrianRot.y) + " " + std::to_string(pedestrianRot.z);
-	line += "\n\Pedestrian Forward vector (points in Y direction): " + std::to_string(pedestrianRotForwardVector.x) + " " + std::to_string(pedestrianRotForwardVector.y) + " " + std::to_string(pedestrianRotForwardVector.z);
+	line += "\n\tPedestrian rotation: " + std::to_string(pedestrianRot.x) + " " + std::to_string(pedestrianRot.y) + " " + std::to_string(pedestrianRot.z);
+	line += "\n\tPedestrian Forward vector (points in Y direction): " + std::to_string(pedestrianRotForwardVector.x) + " " + std::to_string(pedestrianRotForwardVector.y) + " " + std::to_string(pedestrianRotForwardVector.z);
 
 	logString(filePath, line + "\n");
 }

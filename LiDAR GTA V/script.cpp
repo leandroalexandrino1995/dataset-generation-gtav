@@ -239,7 +239,7 @@ void SetInitialConfigs()
 
 	//Set clear weather
 	GAMEPLAY::CLEAR_OVERRIDE_WEATHER();
-	GAMEPLAY::SET_OVERRIDE_WEATHER("OVERCAST");
+	GAMEPLAY::SET_OVERRIDE_WEATHER((char*)"OVERCAST");
 
 	//Set time to noon
 	TIME::SET_CLOCK_TIME(12, 0, 0);
@@ -792,7 +792,7 @@ void introduceError(Vector3* xyzError, double x, double y, double z, double erro
 }
 
 void notificationOnLeft(std::string notificationText) {
-	UI::_SET_NOTIFICATION_TEXT_ENTRY("CELL_EMAIL_BCON");
+	UI::_SET_NOTIFICATION_TEXT_ENTRY((char *)"CELL_EMAIL_BCON");
 	const int maxLen = 99;
 	for (int i = 0; i < notificationText.length(); i += maxLen) {
 		std::string divideText = notificationText.substr(i, min(maxLen, notificationText.length() - i));
@@ -947,7 +947,7 @@ int SaveScreenshot(std::string filename, ULONG uQuality = 100)
 	encoderParams.Parameter[0].Guid = EncoderQuality;
 	encoderParams.Parameter[0].Type = EncoderParameterValueTypeLong;
 	encoderParams.Parameter[0].Value = &uQuality;
-	GetEncoderClsid(L"image/jpeg", &imageCLSID);
+	GetEncoderClsid((WCHAR *)L"image/jpeg", &imageCLSID);
 
 	wchar_t* lpszFilename = new wchar_t[filename.length() + 1];
 	mbstowcs(lpszFilename, filename.c_str(), filename.length() + 1);
@@ -1001,7 +1001,7 @@ void SetupGameForLidarScan(double horiFovMin, double horiFovMax, double vertFovM
 	//log << "Setting up camera...";
 	Vector3 playerCurRot = ENTITY::GET_ENTITY_ROTATION(PLAYER::PLAYER_PED_ID(), 0);
 
-	panoramicCam = CAM::CREATE_CAM("DEFAULT_SCRIPTED_CAMERA", 1);
+	panoramicCam = CAM::CREATE_CAM((char*)"DEFAULT_SCRIPTED_CAMERA", 1);
 	LogRenderingCameraSettings(filePath + lidarFrameLogFilePathDebug, "SetupGameForLidarScan", panoramicCam);
 	//LogCustomInformation(filePath + lidarFrameLogFilePathDebug, "SetupGameForLidarScan", "New Cam height pos", std::to_string(centerDot.x) + " " + std::to_string(centerDot.y) + " " + std::to_string(centerDot.z));
 
@@ -1287,7 +1287,7 @@ int RegisterVehicleInformation(Entity vehicleHandle, std::string entityType, std
 	//}
 
 	// stop the vehicle from moving
-	ENTITY::SET_ENTITY_VELOCITY(vehicleHandle, 0, 0, 0);
+	//ENTITY::SET_ENTITY_VELOCITY(vehicleHandle, 0, 0, 0);
 
 	// get hash value of the corresponding vehicle model
 	Hash vehicleHash = ENTITY::GET_ENTITY_MODEL(vehicleHandle);
@@ -1686,7 +1686,7 @@ void TakeCameraImages(std::string filePath)
 
 	//Set clear weather
 	GAMEPLAY::CLEAR_OVERRIDE_WEATHER();
-	GAMEPLAY::SET_OVERRIDE_WEATHER("CLEAR");
+	GAMEPLAY::SET_OVERRIDE_WEATHER((char*)"CLEAR");
 
 	TIME::SET_CLOCK_TIME(12, 0, 0);
 
@@ -1768,10 +1768,16 @@ void PostLidarScanProcessing(std::string filePath)
 					countValidPoints++;
 
 					// vertexData; fill point cloud .ply
-					fileOutputLines += std::to_string(pointsMatrix[i][j].x - centerDot.x) + " " + std::to_string(pointsMatrix[i][j].y - centerDot.y) + " " + std::to_string(pointsMatrix[i][j].z - centerDot.z) + "\n";
+					if (labels[i][j] == 1 || labels[i][j] == 2){
+						fileOutputLines += std::to_string(pointsMatrix[i][j].x - centerDot.x) + " " + std::to_string(pointsMatrix[i][j].y - centerDot.y) + " " + std::to_string(pointsMatrix[i][j].z - centerDot.z) + " " + std::to_string(ENTITY::GET_ENTITY_SPEED(labelsDetailed[i][j])*3.6/100) + "\n";
+					}
+					else {
+						fileOutputLines += std::to_string(pointsMatrix[i][j].x - centerDot.x) + " " + std::to_string(pointsMatrix[i][j].y - centerDot.y) + " " + std::to_string(pointsMatrix[i][j].z - centerDot.z) + " 0\n";
+					}
+					//fileOutputLines += std::to_string(pointsMatrix[i][j].x - centerDot.x) + " " + std::to_string(pointsMatrix[i][j].y - centerDot.y) + " " + std::to_string(pointsMatrix[i][j].z - centerDot.z) + "\n";
 
 					// fill LiDAR_PointCloud_points.txt
-					fileOutputPointsLines += std::to_string(pointsMatrix[i][j].x - centerDot.x) + " " + std::to_string(pointsMatrix[i][j].y - centerDot.y) + " " + std::to_string(pointsMatrix[i][j].z - centerDot.z) + " " + std::to_string(pointsProjectedMatrix[i][j].screenCoordX) + " " + std::to_string(pointsProjectedMatrix[i][j].screenCoordY) + " " + std::to_string(pointsProjectedMatrix[i][j].pictureId) + "\n";
+					//fileOutputPointsLines += std::to_string(pointsMatrix[i][j].x - centerDot.x) + " " + std::to_string(pointsMatrix[i][j].y - centerDot.y) + " " + std::to_string(pointsMatrix[i][j].z - centerDot.z) + " " + std::to_string(pointsProjectedMatrix[i][j].screenCoordX) + " " + std::to_string(pointsProjectedMatrix[i][j].screenCoordY) + " " + std::to_string(pointsProjectedMatrix[i][j].pictureId) + "\n";
 
 					// fill point cloud with errors .ply
 					//fileOutputErrorLines += std::to_string(pointsMatrix[i][j].x - centerDot.x) + " " + std::to_string(pointsMatrix[i][j].y - centerDot.y) + " " + std::to_string(pointsMatrix[i][j].z - centerDot.z) + " " + std::to_string(heightAboveGround) + "\n";
@@ -1790,11 +1796,11 @@ void PostLidarScanProcessing(std::string filePath)
 			}
 		}
 
-		fileOutput << "ply\nformat ascii 1.0\nelement vertex " + std::to_string(countValidPoints) + "\nproperty float x\nproperty float y\nproperty float z\nend_header\n";
+		fileOutput << "ply\nformat ascii 1.0\nelement vertex " + std::to_string(countValidPoints) + "\nproperty float x\nproperty float y\nproperty float z\nproperty float intensity\nend_header\n";
 		//fileOutputError << "ply\nformat ascii 1.0\nelement vertex " + std::to_string(countValidPoints) + "\nproperty float x\nproperty float y\nproperty float z\nend_header\n";
 
 		fileOutput << fileOutputLines;
-		fileOutputPoints << fileOutputPointsLines;
+		//fileOutputPoints << fileOutputPointsLines;
 		//fileOutputError << fileOutputErrorLines;
 		//fileOutputErrorPoints << fileOutputErrorPointsLines;
 		labelsFileStreamW << labelsFileStreamWLines;
